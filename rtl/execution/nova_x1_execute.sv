@@ -109,7 +109,7 @@ module nova_x1_execute (
                                 !(is_csr && csr_access_error);
 
         branch_taken = decoder_valid &&
-                       (is_jump ||
+                       (is_jump || is_mret ||
                         (is_branch &&
                         ((branch_funct3 == 3'b000 && register_data_a == register_data_b) ||
                          (branch_funct3 == 3'b001 && register_data_a != register_data_b) ||
