@@ -50,6 +50,13 @@ run_test tb_nova_x1_system \
     rtl/registers/nova_x1_regfile.sv rtl/execution/nova_x1_alu.sv \
     rtl/execution/nova_x1_execute.sv rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv \
     rtl/core/nova_x1_system.sv tb/tb_nova_x1_system.sv
+run_test tb_nova_x1_system_load_store \
+    rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
+    rtl/memory/nova_x1_imem.sv rtl/decode/nova_x1_decoder.sv \
+    rtl/registers/nova_x1_regfile.sv rtl/execution/nova_x1_alu.sv \
+    rtl/execution/nova_x1_execute.sv rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv \
+    rtl/core/nova_x1_system.sv tb/tb_nova_x1_system_load_store.sv
+
 run_test tb_nova_x1_control_flow_system \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/memory/nova_x1_imem.sv rtl/decode/nova_x1_decoder.sv \
