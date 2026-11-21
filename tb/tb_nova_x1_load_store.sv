@@ -1,4 +1,4 @@
-\`timescale 1ns/1ps
+`timescale 1ns/1ps
 module tb_nova_x1_load_store;
     logic clk = 1'b0;
     logic reset = 1'b1;
