@@ -8,6 +8,7 @@ module nova_x1_decoder (
     output logic        uses_immediate,
     output logic        is_branch,
     output logic        branch_not_equal,
+    output logic [2:0]  branch_funct3,
     output logic        is_jump,
     output logic        is_jalr,
     output logic [4:0]  rs1,
@@ -33,6 +34,7 @@ module nova_x1_decoder (
         uses_immediate   = 1'b0;
         is_branch        = 1'b0;
         branch_not_equal = 1'b0;
+        branch_funct3    = 3'b000;
         is_jump          = 1'b0;
         is_jalr          = 1'b0;
         rs1              = instruction[19:15];
@@ -88,9 +90,12 @@ module nova_x1_decoder (
                 uses_rs1=1'b1; uses_rs2=1'b1; is_branch=1'b1;
                 immediate={{51{instruction[31]}},instruction[31],instruction[7],
                            instruction[30:25],instruction[11:8],1'b0};
+                branch_funct3 = funct3;
                 case (funct3)
-                    3'b000: valid=1'b1;
-                    3'b001: begin valid=1'b1; branch_not_equal=1'b1; end
+                    3'b000, 3'b001, 3'b100, 3'b101, 3'b110, 3'b111: begin
+                        valid=1'b1;
+                        if (funct3==3'b001) branch_not_equal=1'b1;
+                    end
                     default: ;
                 endcase
             end
