@@ -22,6 +22,6 @@ make lint
 ```
 
 ## Scope and limitations
-This is not a production CPU or validated silicon design. It is a growing RTL prototype that executes one instruction per enabled cycle. Data memory and load/store are not yet integrated. Illegal encodings are detected and suppress register writeback, but trap/exception entry is not implemented; the prototype continues sequential execution. Interrupts, privilege modes, caches, MMU, pipeline, forwarding, hazard handling, and a software toolchain are also absent. ROM initialization and synthesis inference require validation in a selected FPGA/ASIC flow. No clock, area, power, or performance claims are made.
+This is not a production CPU or validated silicon design. It is a growing RTL prototype that executes one instruction per enabled cycle. Data memory and load/store are integrated in the core and system wrapper. Illegal encodings and memory faults are detected and suppress affected side effects, but trap/exception entry is not implemented; the prototype continues sequential execution. Interrupts, privilege modes, caches, MMU, pipeline, forwarding, hazard handling, and a software toolchain are also absent. ROM initialization and synthesis inference require validation in a selected FPGA/ASIC flow. No clock, area, power, or performance claims are made.
 
 See [docs/architecture.md](docs/architecture.md) and [docs/isa_v0.1.md](docs/isa_v0.1.md) for design notes.
