@@ -41,10 +41,31 @@ module tb_nova_x1_decoder;
         check(immediate == 64'hffff_ffff_ffff_ffff, "I-type sign extension");
         check(alu_op == NOVA_ADD && rd == 6 && rs1 == 8, "I-type ADD decode");
 
-        // An unsupported function must be illegal.
+        // Legal SLLI must preserve the six-bit shift amount.
+        instruction = {6'b000000, 6'd37, 5'd9, 3'b001, 5'd10, 7'b0010011};
+        #1;
+        check(valid && alu_op == NOVA_SLL, "Legal SLLI decode");
+        check(immediate == 64'd37, "SLLI shift amount");
+
+        // Legal SRAI has the arithmetic-shift encoding.
+        instruction = {6'b010000, 6'd12, 5'd9, 3'b101, 5'd10, 7'b0010011};
+        #1;
+        check(valid && alu_op == NOVA_SRA, "Legal SRAI decode");
+        check(immediate == 64'd12, "SRAI shift amount");
+
+        // Reserved upper immediate bits must make shift-immediate encodings illegal.
+        instruction = {6'b000001, 6'd3, 5'd1, 3'b001, 5'd2, 7'b0010011};
+        #1;
+        check(!valid && illegal, "Reserved SLLI upper bits must be illegal");
+        instruction = {6'b000010, 6'd3, 5'd1, 3'b101, 5'd2, 7'b0010011};
+        #1;
+        check(!valid && illegal, "Reserved SRLI upper bits must be illegal");
+
+        // An unsupported R-type function must be illegal.
         instruction = {7'b1111111, 5'd2, 5'd1, 3'b000, 5'd3, 7'b0110011};
         #1;
         check(!valid && illegal, "Unsupported R-type encoding must be illegal");
+
         // Reserved branch funct3 must not be accepted.
         instruction = {1'b0,6'b0,5'd2,5'd1,3'b010,4'b0,1'b0,7'b1100011};
         #1;
@@ -54,7 +75,6 @@ module tb_nova_x1_decoder;
         instruction = {12'd0,5'd1,3'b001,5'd3,7'b1100111};
         #1;
         check(!valid && illegal, "Reserved JALR funct3 must be illegal");
-
 
         $display("PASS: NOVA X1 decoder tests");
         $finish;
