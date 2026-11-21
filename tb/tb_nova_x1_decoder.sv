@@ -2,6 +2,8 @@ module tb_nova_x1_decoder;
     import nova_pkg::*;
     logic [31:0] instruction;
     logic valid, illegal, uses_rs1, uses_rs2, writes_rd, uses_immediate;
+    logic is_branch, is_jump, is_jalr;
+    logic [2:0] branch_funct3;
     logic [4:0] rs1, rs2, rd;
     logic [63:0] immediate;
     nova_alu_op_t alu_op;
@@ -9,8 +11,9 @@ module tb_nova_x1_decoder;
     nova_x1_decoder dut (
         .instruction(instruction), .valid(valid), .illegal(illegal),
         .uses_rs1(uses_rs1), .uses_rs2(uses_rs2), .writes_rd(writes_rd),
-        .uses_immediate(uses_immediate), .rs1(rs1), .rs2(rs2), .rd(rd),
-        .immediate(immediate), .alu_op(alu_op)
+        .uses_immediate(uses_immediate), .is_branch(is_branch),
+        .branch_funct3(branch_funct3), .is_jump(is_jump), .is_jalr(is_jalr),
+        .rs1(rs1), .rs2(rs2), .rd(rd), .immediate(immediate), .alu_op(alu_op)
     );
 
     task automatic check(input logic condition, input string message);
@@ -18,6 +21,14 @@ module tb_nova_x1_decoder;
             $display("FAIL: %s", message);
             $fatal(1);
         end
+    endtask
+
+    task automatic check_no_side_effects(input string message);
+        check(!uses_rs1 && !uses_rs2 && !writes_rd && !uses_immediate &&
+              !is_branch && !is_jump && !is_jalr,
+              {message, ": active decode controls"});
+        check(immediate == 64'b0 && branch_funct3 == 3'b000,
+              {message, ": stale immediate or branch function"});
     endtask
 
     initial begin
@@ -57,24 +68,29 @@ module tb_nova_x1_decoder;
         instruction = {6'b000001, 6'd3, 5'd1, 3'b001, 5'd2, 7'b0010011};
         #1;
         check(!valid && illegal, "Reserved SLLI upper bits must be illegal");
+        check_no_side_effects("Reserved SLLI");
         instruction = {6'b000010, 6'd3, 5'd1, 3'b101, 5'd2, 7'b0010011};
         #1;
         check(!valid && illegal, "Reserved SRLI upper bits must be illegal");
+        check_no_side_effects("Reserved SRLI");
 
-        // An unsupported R-type function must be illegal.
+        // An unsupported R-type function must be illegal and inert.
         instruction = {7'b1111111, 5'd2, 5'd1, 3'b000, 5'd3, 7'b0110011};
         #1;
         check(!valid && illegal, "Unsupported R-type encoding must be illegal");
+        check_no_side_effects("Unsupported R-type");
 
-        // Reserved branch funct3 must not be accepted.
+        // Reserved branch funct3 must not be accepted or leak branch controls.
         instruction = {1'b0,6'b0,5'd2,5'd1,3'b010,4'b0,1'b0,7'b1100011};
         #1;
         check(!valid && illegal, "Reserved branch funct3 must be illegal");
+        check_no_side_effects("Reserved branch");
 
         // JALR only accepts funct3=000.
         instruction = {12'd0,5'd1,3'b001,5'd3,7'b1100111};
         #1;
         check(!valid && illegal, "Reserved JALR funct3 must be illegal");
+        check_no_side_effects("Reserved JALR");
 
         $display("PASS: NOVA X1 decoder tests");
         $finish;
