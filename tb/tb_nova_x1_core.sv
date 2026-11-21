@@ -45,10 +45,11 @@ module tb_nova_x1_core;
         run_enable = 1'b1;
 
         repeat (4) begin
+            @(negedge clk);
+            if (!instruction_valid || illegal_instruction)
+                $fatal(1, "Expected a legal instruction at PC=%0d", pc);
             @(posedge clk);
             #1;
-            if (!instruction_valid || illegal_instruction)
-                $fatal(1, "Expected a legal instruction at PC=%0d", pc - 64'd4);
         end
 
         run_enable = 1'b0;
