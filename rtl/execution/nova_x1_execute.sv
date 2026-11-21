@@ -58,8 +58,8 @@ module nova_x1_execute (
     assign memory_fault = (is_load || is_store) &&
                           (memory_misaligned || memory_access_error);
     assign instruction_valid = decoder_valid;
-    assign illegal_instruction = decoder_illegal || memory_fault;
-    assign exception_valid = illegal_instruction || (is_csr && csr_access_error);
+    assign illegal_instruction = decoder_illegal || memory_fault || (is_csr && csr_access_error);
+    assign exception_valid = illegal_instruction;
     always_comb begin
         exception_cause = 4'd0;
         if (decoder_illegal)
@@ -105,7 +105,8 @@ module nova_x1_execute (
                            (is_jump ? link_value : alu_result));
         register_write_enable = writeback_enable && decoder_valid &&
                                 writes_rd && (rd != 5'd0) && !reset &&
-                                !(is_load && memory_fault);
+                                !(is_load && memory_fault) &&
+                                !(is_csr && csr_access_error);
 
         branch_taken = decoder_valid &&
                        (is_jump ||
