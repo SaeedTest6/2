@@ -21,13 +21,25 @@ module tb_nova_x1_pc;
         @(posedge clk); #1;
         if (pc !== 64'h100) $fatal(1, "PC next address failed");
 
-        redirect = 1'b1; redirect_address = 64'h8000;
+        // Redirect has priority over a simultaneous sequential update.
+        redirect = 1'b1; redirect_address = 64'h8000; next_address = 64'h104;
         @(posedge clk); #1;
-        if (pc !== 64'h8000) $fatal(1, "PC redirect failed");
+        if (pc !== 64'h8000) $fatal(1, "PC redirect priority failed");
+
+        // Redirect input is honored by the PC block even if enable is low.
+        // The core is responsible for qualifying redirects with run_enable.
+        redirect = 1'b1; enable = 1'b0; redirect_address = 64'h9000;
+        @(posedge clk); #1;
+        if (pc !== 64'h9000) $fatal(1, "PC redirect independent of enable failed");
 
         redirect = 1'b0; enable = 1'b0; next_address = 64'h200;
         @(posedge clk); #1;
-        if (pc !== 64'h8000) $fatal(1, "PC hold failed");
+        if (pc !== 64'h9000) $fatal(1, "PC hold failed");
+
+        // Synchronous reset must dominate a simultaneous redirect.
+        reset = 1'b1; redirect = 1'b1; redirect_address = 64'hdead;
+        @(posedge clk); #1;
+        if (pc !== 64'd0) $fatal(1, "PC reset priority failed");
 
         $display("PASS: NOVA X1 PC");
         $finish;
