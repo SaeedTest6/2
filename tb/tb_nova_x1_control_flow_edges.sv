@@ -41,7 +41,6 @@ module tb_nova_x1_control_flow_edges;
     initial begin
         // Loop backward with BLT until x2 reaches 3. Then JALR clears odd target bit.
         words[0]={12'd3,5'd0,3'b000,5'd1,7'b0010011}; // x1=3
-        words[1]={7'b0000000,5'd1,5'd2,3'b000,5'd2,7'b0110011}; // x2=x2+x1? replaced below
         words[1]={12'd1,5'd2,3'b000,5'd2,7'b0010011}; // x2=x2+1
         words[2]=branch(5'd2,5'd1,3'b100,-4); // BLT x2,x1,-4
         words[3]={12'd25,5'd0,3'b000,5'd4,7'b0010011}; // x4=25
