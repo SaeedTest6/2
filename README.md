@@ -12,7 +12,7 @@ NOVA is an experimental custom-ISA 64-bit processor RTL project. The current del
 - Byte-addressable little-endian data RAM with LB/LH/LW/LD/LBU/LHU/LWU and SB/SH/SW/SD
 - Misalignment and out-of-range access detection with invalid side-effect suppression
 - Initial trap entry: faulting PC/cause capture and configurable trap-vector redirect
-- Machine CSRs (`mtvec`, `mepc`, `mcause`) with register/immediate read-modify-write operations
+- Machine CSRs (`mstatus`, `mtvec`, `mepc`, `mcause`) with register/immediate read-modify-write operations
 - `MRET` instruction to return to the address saved in `mepc`
 - Self-checking Icarus Verilog testbenches and GitHub Actions CI
 
