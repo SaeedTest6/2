@@ -1,6 +1,7 @@
 module nova_x1_core #(
     parameter integer DMEM_DEPTH_BYTES = 4096,
-    parameter DMEM_INIT_FILE = ""
+    parameter DMEM_INIT_FILE = "",
+    parameter logic [63:0] TRAP_VECTOR = 64'h0000_0000_0000_0100
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -9,7 +10,10 @@ module nova_x1_core #(
     output logic [63:0] pc,
     output logic        instruction_valid,
     output logic        illegal_instruction,
-    output logic [63:0] execution_result
+    output logic [63:0] execution_result,
+    output logic        trap_taken,
+    output logic [63:0] trap_epc,
+    output logic [3:0]  trap_cause
 );
     logic result_zero;
     logic branch_taken;
@@ -21,11 +25,13 @@ module nova_x1_core #(
     logic [63:0] memory_read_data;
     logic memory_misaligned;
     logic memory_access_error;
+    logic exception_valid;
+    logic [3:0] exception_cause;
 
     nova_x1_pc program_counter (
         .clk(clk), .reset(reset), .enable(run_enable),
-        .redirect(run_enable && branch_taken),
-        .redirect_address(branch_target),
+        .redirect(run_enable && (exception_valid || branch_taken)),
+        .redirect_address(exception_valid ? TRAP_VECTOR : branch_target),
         .next_address(pc + 64'd4), .pc(pc)
     );
 
@@ -39,11 +45,25 @@ module nova_x1_core #(
         .memory_address(memory_address),
         .memory_write_data(memory_write_data),
         .memory_funct3(memory_funct3),
+        .exception_valid(exception_valid),
+        .exception_cause(exception_cause),
         .instruction_valid(instruction_valid),
         .illegal_instruction(illegal_instruction),
         .execution_result(execution_result), .result_zero(result_zero),
         .branch_taken(branch_taken), .branch_offset(branch_target)
     );
+
+    assign trap_taken = run_enable && exception_valid;
+
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            trap_epc <= 64'b0;
+            trap_cause <= 4'd0;
+        end else if (trap_taken) begin
+            trap_epc <= pc;
+            trap_cause <= exception_cause;
+        end
+    end
 
     nova_x1_dmem #(
         .DEPTH_BYTES(DMEM_DEPTH_BYTES),
