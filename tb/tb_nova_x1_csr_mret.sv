@@ -59,7 +59,7 @@ module tb_nova_x1_csr_mret;
             dut.execute_unit.registers.registers[10]!==64'h100 ||
             dut.execute_unit.registers.registers[11]!==64'd2)
             $fatal(1,"CSR immediate/register read-modify-write semantics incorrect");
-        if (trap_epc!==64'd16 || trap_cause!==4'd0 || dut.mtvec!==64'd16)
+        if (trap_epc!==64'd16 || trap_cause!==4'd2 || dut.mtvec!==64'd16)
             $fatal(1,"CSR writes to MEPC/MCAUSE/MTVEC incorrect");
 
         @(posedge clk); #1;
