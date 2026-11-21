@@ -113,7 +113,7 @@ module tb_nova_x1_load_store;
         if (dut.execute_unit.registers.registers[8] !== 64'd7)
             $fatal(1, "Trap handler did not continue execution after the memory fault");
         if (dut.execute_unit.registers.registers[9] !== 64'd43)
-            $fatal(1, "Misaligned SW must not modify the stored byte");
+            $fatal(1, "Trap handler LBU did not read the preserved stored byte");
         if (dut.execute_unit.registers.registers[10] !== 64'hffff_ffff_ffff_ff80)
             $fatal(1, "LH sign extension result incorrect");
         if (dut.execute_unit.registers.registers[11] !== 64'hff80)
@@ -139,6 +139,7 @@ module tb_nova_x1_load_store;
             dut.data_memory.memory[87] !== 8'hff)
             begin
                 $fatal(1, "Data memory byte contents incorrect");
+            end
 
         $display("PASS: NOVA X1 core all load/store widths and fault suppression");
         $finish;
