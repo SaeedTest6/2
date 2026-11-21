@@ -2,8 +2,8 @@ module tb_nova_x1_decoder;
     import nova_pkg::*;
     logic [31:0] instruction;
     logic valid, illegal, uses_rs1, uses_rs2, writes_rd, uses_immediate;
-    logic is_branch, is_jump, is_jalr;
-    logic [2:0] branch_funct3;
+    logic is_branch, is_jump, is_jalr, is_load, is_store;
+    logic [2:0] branch_funct3, mem_funct3;
     logic [4:0] rs1, rs2, rd;
     logic [63:0] immediate;
     nova_alu_op_t alu_op;
@@ -13,6 +13,7 @@ module tb_nova_x1_decoder;
         .uses_rs1(uses_rs1), .uses_rs2(uses_rs2), .writes_rd(writes_rd),
         .uses_immediate(uses_immediate), .is_branch(is_branch),
         .branch_funct3(branch_funct3), .is_jump(is_jump), .is_jalr(is_jalr),
+        .is_load(is_load), .is_store(is_store), .mem_funct3(mem_funct3),
         .rs1(rs1), .rs2(rs2), .rd(rd), .immediate(immediate), .alu_op(alu_op)
     );
 
@@ -25,10 +26,11 @@ module tb_nova_x1_decoder;
 
     task automatic check_no_side_effects(input string message);
         check(!uses_rs1 && !uses_rs2 && !writes_rd && !uses_immediate &&
-              !is_branch && !is_jump && !is_jalr,
+              !is_branch && !is_jump && !is_jalr && !is_load && !is_store,
               {message, ": active decode controls"});
-        check(immediate == 64'b0 && branch_funct3 == 3'b000,
-              {message, ": stale immediate or branch function"});
+        check(immediate == 64'b0 && branch_funct3 == 3'b000 &&
+              mem_funct3 == 3'b000,
+              {message, ": stale immediate or function"});
     endtask
 
     initial begin
@@ -63,6 +65,39 @@ module tb_nova_x1_decoder;
         #1;
         check(valid && alu_op == NOVA_SRA, "Legal SRAI decode");
         check(immediate == 64'd12, "SRAI shift amount");
+
+        // Load LB x3,-4(x5)
+        instruction = {12'hffc, 5'd5, 3'b000, 5'd3, 7'b0000011};
+        #1;
+        check(valid && !illegal && is_load && !is_store, "LB decode");
+        check(uses_rs1 && !uses_rs2 && writes_rd && uses_immediate, "Load controls");
+        check(rs1 == 5 && rd == 3 && mem_funct3 == 3'b000, "Load fields");
+        check(immediate == 64'hffff_ffff_ffff_fffc, "Load signed offset");
+
+        // LWU x7,12(x8)
+        instruction = {12'd12, 5'd8, 3'b110, 5'd7, 7'b0000011};
+        #1;
+        check(valid && is_load && mem_funct3 == 3'b110, "LWU decode");
+
+        // SD x6,-8(x5): S-type immediate is split across instruction fields.
+        instruction = {7'h7f, 5'd6, 5'd5, 3'b011, 5'h18, 7'b0100011};
+        #1;
+        check(valid && !illegal && is_store && !is_load, "SD decode");
+        check(uses_rs1 && uses_rs2 && !writes_rd && uses_immediate, "Store controls");
+        check(rs1 == 5 && rs2 == 6 && mem_funct3 == 3'b011, "Store fields");
+        check(immediate == 64'hffff_ffff_ffff_fff8, "Store signed S-immediate");
+
+        // Reserved load funct3=111 must be illegal and inert.
+        instruction = {12'd0, 5'd1, 3'b111, 5'd2, 7'b0000011};
+        #1;
+        check(!valid && illegal, "Reserved load funct3 must be illegal");
+        check_no_side_effects("Reserved load");
+
+        // Reserved store funct3=100 must be illegal and inert.
+        instruction = {7'd0, 5'd2, 5'd1, 3'b100, 5'd0, 7'b0100011};
+        #1;
+        check(!valid && illegal, "Reserved store funct3 must be illegal");
+        check_no_side_effects("Reserved store");
 
         // Reserved upper immediate bits must make shift-immediate encodings illegal.
         instruction = {6'b000001, 6'd3, 5'd1, 3'b001, 5'd2, 7'b0010011};
