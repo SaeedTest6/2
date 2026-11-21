@@ -6,7 +6,9 @@ module nova_x1_execute (
     output logic        instruction_valid,
     output logic        illegal_instruction,
     output logic [63:0] execution_result,
-    output logic        result_zero
+    output logic        result_zero,
+    output logic        branch_taken,
+    output logic [63:0] branch_offset
 );
     import nova_pkg::*;
 
@@ -14,6 +16,8 @@ module nova_x1_execute (
     logic uses_rs2;
     logic writes_rd;
     logic uses_immediate;
+    logic is_branch;
+    logic branch_not_equal;
     logic [4:0] rs1;
     logic [4:0] rs2;
     logic [4:0] rd;
@@ -33,6 +37,8 @@ module nova_x1_execute (
         .uses_rs2(uses_rs2),
         .writes_rd(writes_rd),
         .uses_immediate(uses_immediate),
+        .is_branch(is_branch),
+        .branch_not_equal(branch_not_equal),
         .rs1(rs1),
         .rs2(rs2),
         .rd(rd),
@@ -58,6 +64,11 @@ module nova_x1_execute (
                     (uses_rs2 ? register_data_b : 64'b0);
         register_write_enable = writeback_enable && instruction_valid &&
                                 writes_rd && (rd != 5'd0) && !reset;
+        branch_offset = immediate;
+        branch_taken = instruction_valid && is_branch &&
+                       (branch_not_equal ?
+                        (register_data_a != register_data_b) :
+                        (register_data_a == register_data_b));
     end
 
     nova_x1_alu alu (
