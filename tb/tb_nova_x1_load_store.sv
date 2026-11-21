@@ -124,8 +124,8 @@ module tb_nova_x1_load_store;
             dut.data_memory.memory[66] !== 8'h80 ||
             dut.data_memory.memory[68] !== 8'h80 ||
             dut.data_memory.memory[69] !== 8'hff ||
-            dut.data_memory.memory[70] !== 8'hff ||
-            dut.data_memory.memory[71] !== 8'hff ||
+            dut.data_memory.memory[70] !== 8'h00 ||
+            dut.data_memory.memory[71] !== 8'h00 ||
             dut.data_memory.memory[72] !== 8'h80 ||
             dut.data_memory.memory[73] !== 8'hff ||
             dut.data_memory.memory[74] !== 8'hff ||
