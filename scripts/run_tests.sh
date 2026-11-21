@@ -26,47 +26,47 @@ run_test tb_nova_x1_core \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
-    rtl/core/nova_x1_core.sv tb/tb_nova_x1_core.sv
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_core.sv
 run_test tb_nova_x1_branch \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
-    rtl/core/nova_x1_core.sv tb/tb_nova_x1_branch.sv
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_branch.sv
 run_test tb_nova_x1_branch_compare \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
-    rtl/core/nova_x1_core.sv tb/tb_nova_x1_branch_compare.sv
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_branch_compare.sv
 run_test tb_nova_x1_jump \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
-    rtl/core/nova_x1_core.sv tb/tb_nova_x1_jump.sv
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_jump.sv
 run_test tb_nova_x1_imem rtl/memory/nova_x1_imem.sv tb/tb_nova_x1_imem.sv
 run_test tb_nova_x1_dmem rtl/memory/nova_x1_dmem.sv tb/tb_nova_x1_dmem.sv
 run_test tb_nova_x1_system \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/memory/nova_x1_imem.sv rtl/decode/nova_x1_decoder.sv \
     rtl/registers/nova_x1_regfile.sv rtl/execution/nova_x1_alu.sv \
-    rtl/execution/nova_x1_execute.sv rtl/core/nova_x1_core.sv \
+    rtl/execution/nova_x1_execute.sv rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv \
     rtl/core/nova_x1_system.sv tb/tb_nova_x1_system.sv
 run_test tb_nova_x1_control_flow_system \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/memory/nova_x1_imem.sv rtl/decode/nova_x1_decoder.sv \
     rtl/registers/nova_x1_regfile.sv rtl/execution/nova_x1_alu.sv \
-    rtl/execution/nova_x1_execute.sv rtl/core/nova_x1_core.sv \
+    rtl/execution/nova_x1_execute.sv rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv \
     rtl/core/nova_x1_system.sv tb/tb_nova_x1_control_flow_system.sv
 
 run_test tb_nova_x1_control_flow_edges \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
-    rtl/core/nova_x1_core.sv tb/tb_nova_x1_control_flow_edges.sv
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_control_flow_edges.sv
 
 run_test tb_nova_x1_illegal \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
-    rtl/core/nova_x1_core.sv tb/tb_nova_x1_illegal.sv
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_illegal.sv
 
 echo "ALL NOVA X1 STARTER TESTS PASSED"
