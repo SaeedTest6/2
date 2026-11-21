@@ -10,7 +10,8 @@ NOVA is an experimental custom-ISA 64-bit processor RTL project. The current del
 - JAL/JALR jumps with PC+4 link-register writeback
 - Parameterized instruction ROM and ROM-backed system wrapper
 - Byte-addressable little-endian data RAM with LB/LH/LW/LD/LBU/LHU/LWU and SB/SH/SW/SD
-- Misalignment and out-of-range access detection with invalid side-effect suppression\n- Initial trap entry: faulting PC/cause capture and configurable trap-vector redirect
+- Misalignment and out-of-range access detection with invalid side-effect suppression
+- Initial trap entry: faulting PC/cause capture and configurable trap-vector redirect
 - Self-checking Icarus Verilog testbenches and GitHub Actions CI
 
 ## Run tests
