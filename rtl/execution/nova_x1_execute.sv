@@ -19,6 +19,7 @@ module nova_x1_execute (
     output logic        csr_write_enable,
     output logic [11:0] csr_address,
     output logic [63:0] csr_write_data,
+    output logic        mret_taken,
     output logic        instruction_valid,
     output logic        illegal_instruction,
     output logic [63:0] execution_result,
@@ -60,6 +61,7 @@ module nova_x1_execute (
     assign instruction_valid = decoder_valid;
     assign illegal_instruction = decoder_illegal || memory_fault || (is_csr && csr_access_error);
     assign exception_valid = illegal_instruction;
+    assign mret_taken = writeback_enable && decoder_valid && is_mret && !reset;
     always_comb begin
         exception_cause = 4'd0;
         if (decoder_illegal)
