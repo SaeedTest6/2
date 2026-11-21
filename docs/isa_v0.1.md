@@ -36,9 +36,9 @@ The SYSTEM opcode is `1110011`.
 - `CSRRS` / `CSRRSI`: set selected CSR bits using a register value / immediate mask.
 - `CSRRC` / `CSRRCI`: clear selected CSR bits using a register value / immediate mask.
 - CSR instructions return the old CSR value in `rd`. CSRRS/CSRRC variants suppress the CSR write when the source mask is zero.
-- Supported machine CSR addresses: `mtvec` = 0x305, `mepc` = 0x341, and `mcause` = 0x342. Access to other CSR addresses is illegal.
+- Supported machine CSR addresses: `mstatus` = 0x300, `mtvec` = 0x305, `mepc` = 0x341, and `mcause` = 0x342. Access to other CSR addresses is illegal.
 - `mtvec` is initialized from the `TRAP_VECTOR` core parameter and writes clear its bottom two bits.
-- `MRET` is encoded as `0x30200073` and redirects execution to `mepc`.
+- `MRET` is encoded as `0x30200073` and redirects execution to `mepc`. The initial `mstatus` model implements MIE (bit 3) and MPIE (bit 7): trap entry copies MIE to MPIE and clears MIE; MRET restores MIE from MPIE and sets MPIE.
 
 The current trap model records the faulting instruction address in `mepc` and the cause in `mcause`, then redirects to `mtvec`. It does not yet implement privilege modes, interrupt enable/status state, or nested-trap handling.
 
