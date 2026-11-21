@@ -8,16 +8,16 @@ module tb_nova_x1_core;
     logic instruction_valid;
     logic illegal_instruction;
     logic [63:0] execution_result;
-    logic [31:0] program [0:3];
+    logic [31:0] instruction_memory [0:3];
 
     always #5 clk = ~clk;
 
     always_comb begin
         case (pc)
-            64'd0:  instruction = program[0];
-            64'd4:  instruction = program[1];
-            64'd8:  instruction = program[2];
-            64'd12: instruction = program[3];
+            64'd0:  instruction = instruction_memory[0];
+            64'd4:  instruction = instruction_memory[1];
+            64'd8:  instruction = instruction_memory[2];
+            64'd12: instruction = instruction_memory[3];
             default: instruction = 32'h00000000;
         endcase
     end
@@ -35,10 +35,10 @@ module tb_nova_x1_core;
 
     initial begin
         // ADDI x1,x0,10; ADDI x2,x1,5; ADD x3,x1,x2; ADDI x4,x3,0
-        program[0] = {12'd10, 5'd0, 3'b000, 5'd1, 7'b0010011};
-        program[1] = {12'd5,  5'd1, 3'b000, 5'd2, 7'b0010011};
-        program[2] = {7'd0, 5'd2, 5'd1, 3'b000, 5'd3, 7'b0110011};
-        program[3] = {12'd0,  5'd3, 3'b000, 5'd4, 7'b0010011};
+        instruction_memory[0] = {12'd10, 5'd0, 3'b000, 5'd1, 7'b0010011};
+        instruction_memory[1] = {12'd5,  5'd1, 3'b000, 5'd2, 7'b0010011};
+        instruction_memory[2] = {7'd0, 5'd2, 5'd1, 3'b000, 5'd3, 7'b0110011};
+        instruction_memory[3] = {12'd0,  5'd3, 3'b000, 5'd4, 7'b0010011};
 
         repeat (2) @(posedge clk);
         #1 reset = 1'b0;
@@ -63,7 +63,7 @@ module tb_nova_x1_core;
         if (dut.execute_unit.registers.registers[4] !== 64'd25)
             $fatal(1, "x4 expected 25");
 
-        $display("PASS: NOVA X1 fetched and executed a four-instruction program");
+        $display("PASS: NOVA X1 fetched and executed a four-instruction instruction_memory");
         $finish;
     end
 endmodule
