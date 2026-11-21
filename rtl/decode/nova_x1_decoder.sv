@@ -10,6 +10,9 @@ module nova_x1_decoder (
     output logic [2:0]  branch_funct3,
     output logic        is_jump,
     output logic        is_jalr,
+    output logic        is_load,
+    output logic        is_store,
+    output logic [2:0]  mem_funct3,
     output logic [4:0]  rs1,
     output logic [4:0]  rs2,
     output logic [4:0]  rd,
@@ -35,6 +38,9 @@ module nova_x1_decoder (
         branch_funct3    = 3'b000;
         is_jump          = 1'b0;
         is_jalr          = 1'b0;
+        is_load          = 1'b0;
+        is_store         = 1'b0;
+        mem_funct3       = 3'b000;
         rs1              = instruction[19:15];
         rs2              = instruction[24:20];
         rd               = instruction[11:7];
@@ -84,6 +90,17 @@ module nova_x1_decoder (
                     default: ;
                 endcase
             end
+            7'b0000011: begin // Loads: I-type signed offset
+                uses_rs1=1'b1; writes_rd=1'b1; uses_immediate=1'b1;
+                is_load=1'b1; mem_funct3=funct3;
+                if (funct3 != 3'b111) valid=1'b1;
+            end
+            7'b0100011: begin // Stores: S-type signed offset
+                uses_rs1=1'b1; uses_rs2=1'b1; uses_immediate=1'b1;
+                is_store=1'b1; mem_funct3=funct3;
+                immediate={{52{instruction[31]}},instruction[31:25],instruction[11:7]};
+                if (funct3[2:2] == 1'b0) valid=1'b1;
+            end
             7'b1100011: begin
                 uses_rs1=1'b1; uses_rs2=1'b1; is_branch=1'b1;
                 immediate={{51{instruction[31]}},instruction[31],instruction[7],
@@ -122,6 +139,9 @@ module nova_x1_decoder (
             branch_funct3  = 3'b000;
             is_jump        = 1'b0;
             is_jalr        = 1'b0;
+            is_load        = 1'b0;
+            is_store       = 1'b0;
+            mem_funct3     = 3'b000;
             immediate      = 64'b0;
             alu_op         = NOVA_ADD;
         end
