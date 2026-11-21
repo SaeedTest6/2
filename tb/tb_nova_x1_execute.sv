@@ -15,6 +15,7 @@ module tb_nova_x1_execute;
         .reset(reset),
         .writeback_enable(writeback_enable),
         .instruction(instruction),
+        .current_pc(64'b0),
         .instruction_valid(instruction_valid),
         .illegal_instruction(illegal_instruction),
         .execution_result(execution_result),
