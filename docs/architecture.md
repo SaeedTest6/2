@@ -19,6 +19,13 @@ BEQ/BNE compare equality. BLT/BGE use signed 64-bit comparisons; BLTU/BGEU use u
 
 Unsupported encodings assert `illegal_instruction`. The decoder also forces all architectural control outputs inactive for an illegal encoding: no source-register use, destination write, immediate operation, branch, or jump is requested. A minimal synchronous trap-entry mechanism is now implemented. When an illegal instruction or memory fault is observed on an enabled cycle, the core captures the faulting PC in `trap_epc`, captures the cause in `trap_cause`, and redirects the PC to the configurable `TRAP_VECTOR` (default `0x100`).
 
+Trap cause codes currently implemented:
+- 2: illegal instruction
+- 4: load address misaligned
+- 5: load access fault (including out-of-range)
+- 6: store address misaligned
+- 7: store access fault (including out-of-range)
+
 The decoder explicitly rejects reserved branch, JALR, load, and store function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. The data memory reports misaligned and out-of-range accesses; load writeback is suppressed and stores are blocked on memory faults. These cases are covered by self-checking simulation tests. Memory faults now enter the same trap path as illegal instructions. The initial trap model is intentionally small: no privilege modes, nested-trap stack, interrupt handling, or trap-return instruction exists yet. Software must provide a handler at the configured vector; trap state is exposed as core/system outputs for now.
 
 ## Initial conventions
