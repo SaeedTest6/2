@@ -1,40 +1,41 @@
-# NOVA X1 Instruction Set — Draft v0.2
+# NOVA X1 Instruction Set — Draft v0.3
 
 ## Design rule
-NOVA X1 uses fixed-width 32-bit instructions in the first implementation. The encoding is custom to NOVA, borrowing practical RISC-style field layouts. This is an implementation draft, not a frozen public ISA.
+NOVA X1 uses fixed-width 32-bit instructions. The encoding is custom to NOVA and borrows practical RISC-style field layouts. This is an implementation draft, not a frozen public ISA.
 
-## R format
-| Bits | Field | Width |
-|---|---|---:|
-| 31:25 | funct7 | 7 |
-| 24:20 | rs2 | 5 |
-| 19:15 | rs1 | 5 |
-| 14:12 | funct3 | 3 |
-| 11:7 | rd | 5 |
-| 6:0 | opcode | 7 |
+## R format — integer register operations
+Fields: funct7=[31:25], rs2=[24:20], rs1=[19:15], funct3=[14:12], rd=[11:7], opcode=[6:0]. Opcode `0110011`.
+Supported map: ADD 000/0000000, SUB 000/0100000, SLL 001/0000000, SLT 010/0000000, SLTU 011/0000000, XOR 100/0000000, SRL 101/0000000, SRA 101/0100000, OR 110/0000000, AND 111/0000000.
 
-Opcode: `7'b0110011`. Arithmetic funct3/funct7 mapping: ADD 000/0000000, SUB 000/0100000, SLL 001/0000000, SLT 010/0000000, SLTU 011/0000000, XOR 100/0000000, SRL 101/0000000, SRA 101/0100000, OR 110/0000000, AND 111/0000000.
-
-## I-ALU format
-Bits 31:20 are a signed 12-bit immediate; rs1=19:15, funct3=14:12, rd=11:7, opcode=6:0. Opcode: `7'b0010011`. Shift-immediate operations use imm[5:0] as shift amount and imm[11:6] as function discriminator.
+## I format — immediate arithmetic and JALR
+Immediate=[31:20] signed 12-bit, rs1=[19:15], funct3=[14:12], rd=[11:7].
+- ADDI/SLTI/SLTIU/XORI/ORI/ANDI and shift-immediate use opcode `0010011`.
+- JALR uses opcode `1100111`, funct3 `000`; target is `(rs1 + sign_extended_imm) & ~1`.
 
 ## B format — conditional branches
-Opcode: `7'b1100011`. Fields: imm[12]=instruction[31], imm[10:5]=[30:25], rs2=[24:20], rs1=[19:15], funct3=[14:12], imm[4:1]=[11:8], imm[11]=[7], imm[0]=0. The signed 13-bit offset is sign-extended to 64 bits and added to the current instruction PC.
+Opcode `1100011`. imm[12]=[31], imm[10:5]=[30:25], rs2=[24:20], rs1=[19:15], funct3=[14:12], imm[4:1]=[11:8], imm[11]=[7], imm[0]=0. Sign-extended 13-bit byte offset is added to the current PC.
+- BEQ, funct3 `000`: branch if rs1 == rs2.
+- BNE, funct3 `001`: branch if rs1 != rs2.
+Other branch funct3 values are illegal.
 
-| Instruction | funct3 | Condition |
-|---|---|---|
-| BEQ | 000 | rs1 == rs2 |
-| BNE | 001 | rs1 != rs2 |
+## J format — JAL
+Opcode `1101111`. imm[20]=[31], imm[10:1]=[30:21], imm[11]=[20], imm[19:12]=[19:12], rd=[11:7]. The signed 21-bit byte offset is added to the current PC. JAL writes PC+4 to rd.
 
-Only BEQ and BNE are currently implemented. Other branch funct3 values are illegal.
+## Control-flow rules
+- Branch and JAL targets are PC-relative byte addresses.
+- JALR target is computed from rs1 plus its signed immediate, with bit 0 cleared.
+- JAL and JALR write the address of the following instruction (PC+4) to rd.
+- x0 remains hardwired to zero, so link writes to x0 are discarded.
+- Current instruction alignment is 4 bytes; compressed instructions are not implemented.
 
 ## Architectural rules
-- 64-bit datapath and 32 integer registers; x0 is hardwired to zero.
-- Instructions are 32 bits in this implementation.
-- Arithmetic results wrap modulo 2^64.
+- 64-bit integer datapath, 32 general-purpose registers, x0 constant zero.
+- Instructions are fixed 32-bit words.
+- Arithmetic wraps modulo 2^64.
 - Unsupported encodings are illegal and must not execute as another operation.
-- Branch targets are PC-relative byte addresses. Instruction alignment is 4 bytes in the current core.
 
 ## Implementation status
-Implemented: integer register-register and immediate ALU subset, BEQ, BNE, sequential PC update, instruction ROM.
-Not yet implemented: JAL/JALR, load/store, exceptions, interrupts, privilege, caches, MMU, pipeline, forwarding, and hazard handling.
+Implemented: integer R/I ALU subset, BEQ, BNE, JAL, JALR, sequential PC update, instruction ROM.
+Not yet implemented: load/store, exceptions, interrupts, privilege modes, caches, MMU, pipeline, forwarding, hazard handling, assembler/compiler toolchain.
+
+All ISA details remain draft pending broader verification and architectural review.
