@@ -9,6 +9,8 @@ NOVA is an experimental custom-ISA 64-bit processor RTL project. The current del
 - Sequential PC update and six conditional branches: BEQ, BNE, BLT, BGE, BLTU, BGEU
 - JAL/JALR jumps with PC+4 link-register writeback
 - Parameterized instruction ROM and ROM-backed system wrapper
+- Byte-addressable little-endian data RAM with LB/LH/LW/LD/LBU/LHU/LWU and SB/SH/SW/SD
+- Misalignment and out-of-range access detection with invalid side-effect suppression
 - Self-checking Icarus Verilog testbenches and GitHub Actions CI
 
 ## Run tests
