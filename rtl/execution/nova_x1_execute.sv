@@ -13,7 +13,8 @@ module nova_x1_execute (
 );
     import nova_pkg::*;
     logic uses_rs1, uses_rs2, writes_rd, uses_immediate;
-    logic is_branch, branch_not_equal, is_jump, is_jalr;
+    logic is_branch, is_jump, is_jalr;
+    logic [2:0] branch_funct3;
     logic [4:0] rs1, rs2, rd;
     logic [63:0] immediate;
     nova_alu_op_t alu_op;
@@ -28,7 +29,7 @@ module nova_x1_execute (
         .illegal(illegal_instruction), .uses_rs1(uses_rs1),
         .uses_rs2(uses_rs2), .writes_rd(writes_rd),
         .uses_immediate(uses_immediate), .is_branch(is_branch),
-        .branch_not_equal(branch_not_equal), .is_jump(is_jump),
+        .branch_funct3(branch_funct3), .is_jump(is_jump),
         .is_jalr(is_jalr), .rs1(rs1), .rs2(rs2), .rd(rd),
         .immediate(immediate), .alu_op(alu_op)
     );
@@ -52,9 +53,12 @@ module nova_x1_execute (
         branch_taken = instruction_valid &&
                        (is_jump ||
                         (is_branch &&
-                         (branch_not_equal ?
-                          (register_data_a != register_data_b) :
-                          (register_data_a == register_data_b))));
+                        ((branch_funct3 == 3'b000 && register_data_a == register_data_b) ||
+                         (branch_funct3 == 3'b001 && register_data_a != register_data_b) ||
+                         (branch_funct3 == 3'b100 && $signed(register_data_a) < $signed(register_data_b)) ||
+                         (branch_funct3 == 3'b101 && $signed(register_data_a) >= $signed(register_data_b)) ||
+                         (branch_funct3 == 3'b110 && register_data_a < register_data_b) ||
+                         (branch_funct3 == 3'b111 && register_data_a >= register_data_b))));
         if (is_jalr)
             branch_offset = (register_data_a + immediate) & 64'hffff_ffff_ffff_fffe;
         else
