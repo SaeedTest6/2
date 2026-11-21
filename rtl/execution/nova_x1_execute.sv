@@ -44,7 +44,6 @@ module nova_x1_execute (
         operand_a = uses_rs1 ? register_data_a : 64'b0;
         operand_b = uses_immediate ? immediate :
                     (uses_rs2 ? register_data_b : 64'b0);
-        alu_result = 64'b0;
         link_value = current_pc + 64'd4;
         execution_result = is_jump ? link_value : alu_result;
         register_write_enable = writeback_enable && instruction_valid &&
