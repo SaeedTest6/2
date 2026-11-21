@@ -11,6 +11,8 @@ module nova_x1_execute (
     output logic [63:0] memory_address,
     output logic [63:0] memory_write_data,
     output logic [2:0]  memory_funct3,
+    output logic        exception_valid,
+    output logic [3:0]  exception_cause,
     output logic        instruction_valid,
     output logic        illegal_instruction,
     output logic [63:0] execution_result,
@@ -48,6 +50,16 @@ module nova_x1_execute (
                           (memory_misaligned || memory_access_error);
     assign instruction_valid = decoder_valid;
     assign illegal_instruction = decoder_illegal || memory_fault;
+    assign exception_valid = illegal_instruction;
+    always_comb begin
+        exception_cause = 4'd0;
+        if (decoder_illegal)
+            exception_cause = 4'd2;
+        else if (memory_fault && is_load)
+            exception_cause = memory_misaligned ? 4'd4 : 4'd5;
+        else if (memory_fault && is_store)
+            exception_cause = memory_misaligned ? 4'd6 : 4'd7;
+    end
 
     nova_x1_regfile registers (
         .clk(clk), .reset(reset), .write_enable(register_write_enable),
