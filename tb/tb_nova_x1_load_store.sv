@@ -119,6 +119,13 @@ module tb_nova_x1_load_store;
             $fatal(1, "LWU zero extension result incorrect");
         if (dut.execute_unit.registers.registers[14] !== 64'hffff_ffff_ffff_ff80)
             $fatal(1, "LD result incorrect");
+        $display("DMEM[64..87] = %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h",
+            dut.data_memory.memory[64], dut.data_memory.memory[65], dut.data_memory.memory[66], dut.data_memory.memory[67],
+            dut.data_memory.memory[68], dut.data_memory.memory[69], dut.data_memory.memory[70], dut.data_memory.memory[71],
+            dut.data_memory.memory[72], dut.data_memory.memory[73], dut.data_memory.memory[74], dut.data_memory.memory[75],
+            dut.data_memory.memory[76], dut.data_memory.memory[77], dut.data_memory.memory[78], dut.data_memory.memory[79],
+            dut.data_memory.memory[80], dut.data_memory.memory[81], dut.data_memory.memory[82], dut.data_memory.memory[83],
+            dut.data_memory.memory[84], dut.data_memory.memory[85], dut.data_memory.memory[86], dut.data_memory.memory[87]);
         if (dut.data_memory.memory[64] !== 8'h2a ||
             dut.data_memory.memory[65] !== 8'h2b ||
             dut.data_memory.memory[66] !== 8'h80 ||
