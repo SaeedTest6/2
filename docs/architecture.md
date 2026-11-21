@@ -1,6 +1,6 @@
 # NOVA X1 — Architecture Notes
 
-**Revision:** 0.3
+**Revision:** 0.4
 
 ## Project direction
 - Project: NOVA
@@ -13,29 +13,29 @@
 These are design goals, not measured or validated results.
 
 ## Current implementation
-The current prototype consists of:
-1. A 64-bit program counter.
+The current simulation-oriented prototype consists of:
+1. A 64-bit program counter with sequential update and PC-relative branch redirect.
 2. A parameterized combinational instruction ROM, optionally initialized with `$readmemh`.
 3. A 32-bit fixed-width instruction path.
-4. A decoder for the first arithmetic R-type and I-type subset.
+4. A decoder for integer R-type/I-type ALU operations and conditional BEQ/BNE.
 5. A 32-entry architectural register file with x0 hardwired to zero.
 6. A 64-bit ALU and synchronous writeback.
-7. A ROM-backed system wrapper that connects instruction fetch to the execution core.
+7. A ROM-backed system wrapper connecting instruction fetch to the execution core.
 
-The baseline advances PC by four bytes each enabled cycle. The current design has no branch/jump control flow, data memory, or memory wait-state protocol.
+The core executes one instruction per enabled cycle. BEQ and BNE compare the two source registers and redirect the PC by a signed PC-relative byte offset when their condition is true.
 
 ## Initial conventions
 - Data width: 64 bits
-- Instruction width in draft v0.1: 32 bits
+- Instruction width: 32 bits
 - Architectural general-purpose registers: 32
 - x0: constant zero
-- Byte order for future data memory: little-endian
+- Byte order planned for data memory: little-endian
 - Reset: synchronous, active-high
 - ALU operation selector: internal enum; it is not an instruction encoding
 
 ## Implementation strategy
-1. Complete and verify the sequential in-order baseline.
-2. Add control-flow instructions and redirect tests.
+1. Verify the sequential in-order baseline.
+2. Implement and test conditional and unconditional control flow.
 3. Define a robust instruction/data memory interface with wait states.
 4. Add loads/stores and byte/halfword/word/doubleword semantics.
 5. Define exceptions, interrupts, privilege levels, and architectural state.
