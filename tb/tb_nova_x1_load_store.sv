@@ -8,7 +8,7 @@ module tb_nova_x1_load_store;
     logic instruction_valid;
     logic illegal_instruction;
     logic [63:0] execution_result;
-    logic [31:0] program_words [0:13];
+    logic [31:0] program_words [0:21];
     integer step;
 
     always #5 clk = ~clk;
@@ -29,6 +29,14 @@ module tb_nova_x1_load_store;
             64'd44: instruction = program_words[11];
             64'd48: instruction = program_words[12];
             64'd52: instruction = program_words[13];
+            64'd56: instruction = program_words[14];
+            64'd60: instruction = program_words[15];
+            64'd64: instruction = program_words[16];
+            64'd68: instruction = program_words[17];
+            64'd72: instruction = program_words[18];
+            64'd76: instruction = program_words[19];
+            64'd80: instruction = program_words[20];
+            64'd84: instruction = program_words[21];
             default: instruction = 32'h00000013;
         endcase
     end
@@ -45,42 +53,36 @@ module tb_nova_x1_load_store;
     );
 
     initial begin
-        // ADDI x1,x0,64: base address
-        program_words[0] = {12'd64, 5'd0, 3'b000, 5'd1, 7'b0010011};
-        // ADDI x2,x0,42
-        program_words[1] = {12'd42, 5'd0, 3'b000, 5'd2, 7'b0010011};
-        // SW x2,0(x1)
-        program_words[2] = {7'd0, 5'd2, 5'd1, 3'b010, 5'd0, 7'b0100011};
-        // LW x3,0(x1)
-        program_words[3] = {12'd0, 5'd1, 3'b010, 5'd3, 7'b0000011};
-        // ADDI x4,x3,1
-        program_words[4] = {12'd1, 5'd3, 3'b000, 5'd4, 7'b0010011};
-        // SB x4,1(x1)
-        program_words[5] = {7'd0, 5'd4, 5'd1, 3'b000, 5'd1, 7'b0100011};
-        // LBU x5,1(x1)
-        program_words[6] = {12'd1, 5'd1, 3'b100, 5'd5, 7'b0000011};
-        // ADDI x2,x0,-128
-        program_words[7] = {12'hf80, 5'd0, 3'b000, 5'd2, 7'b0010011};
-        // SB x2,2(x1)
-        program_words[8] = {7'd0, 5'd2, 5'd1, 3'b000, 5'd2, 7'b0100011};
-        // LB x6,2(x1): must sign extend 0x80
-        program_words[9] = {12'd2, 5'd1, 3'b000, 5'd6, 7'b0000011};
-        // Misaligned LW x7,1(x1): fault and no register write.
-        program_words[10] = {12'd1, 5'd1, 3'b010, 5'd7, 7'b0000011};
-        // Misaligned SW x2,1(x1): fault and no memory write.
-        program_words[11] = {7'd0, 5'd2, 5'd1, 3'b010, 5'd1, 7'b0100011};
-        // LBU x9,1(x1): failed SW must leave this byte at 43.
-        program_words[12] = {12'd1, 5'd1, 3'b100, 5'd9, 7'b0000011};
-        // ADDI x8,x0,7: prototype continues after detection-only faults.
-        program_words[13] = {12'd7, 5'd0, 3'b000, 5'd8, 7'b0010011};
+        program_words[0]  = {12'd64, 5'd0, 3'b000, 5'd1, 7'b0010011}; // ADDI x1,x0,64
+        program_words[1]  = {12'd42, 5'd0, 3'b000, 5'd2, 7'b0010011}; // ADDI x2,x0,42
+        program_words[2]  = {7'd0, 5'd2, 5'd1, 3'b010, 5'd0, 7'b0100011}; // SW x2,0(x1)
+        program_words[3]  = {12'd0, 5'd1, 3'b010, 5'd3, 7'b0000011}; // LW x3,0(x1)
+        program_words[4]  = {12'd1, 5'd3, 3'b000, 5'd4, 7'b0010011}; // ADDI x4,x3,1
+        program_words[5]  = {7'd0, 5'd4, 5'd1, 3'b000, 5'd1, 7'b0100011}; // SB x4,1(x1)
+        program_words[6]  = {12'd1, 5'd1, 3'b100, 5'd5, 7'b0000011}; // LBU x5,1(x1)
+        program_words[7]  = {12'hf80, 5'd0, 3'b000, 5'd2, 7'b0010011}; // ADDI x2,x0,-128
+        program_words[8]  = {7'd0, 5'd2, 5'd1, 3'b000, 5'd2, 7'b0100011}; // SB x2,2(x1)
+        program_words[9]  = {12'd2, 5'd1, 3'b000, 5'd6, 7'b0000011}; // LB x6,2(x1)
+        program_words[10] = {7'd0, 5'd2, 5'd1, 3'b001, 5'd4, 7'b0100011}; // SH x2,4(x1)
+        program_words[11] = {12'd4, 5'd1, 3'b001, 5'd10, 7'b0000011}; // LH x10,4(x1)
+        program_words[12] = {12'd4, 5'd1, 3'b101, 5'd11, 7'b0000011}; // LHU x11,4(x1)
+        program_words[13] = {7'd0, 5'd2, 5'd1, 3'b010, 5'd8, 7'b0100011}; // SW x2,8(x1)
+        program_words[14] = {12'd8, 5'd1, 3'b010, 5'd12, 7'b0000011}; // LW x12,8(x1)
+        program_words[15] = {12'd8, 5'd1, 3'b110, 5'd13, 7'b0000011}; // LWU x13,8(x1)
+        program_words[16] = {7'd0, 5'd2, 5'd1, 3'b011, 5'd16, 7'b0100011}; // SD x2,16(x1)
+        program_words[17] = {12'd16, 5'd1, 3'b011, 5'd14, 7'b0000011}; // LD x14,16(x1)
+        program_words[18] = {12'd1, 5'd1, 3'b010, 5'd7, 7'b0000011}; // Misaligned LW
+        program_words[19] = {7'd0, 5'd2, 5'd1, 3'b010, 5'd1, 7'b0100011}; // Misaligned SW
+        program_words[20] = {12'd1, 5'd1, 3'b100, 5'd9, 7'b0000011}; // LBU x9,1(x1)
+        program_words[21] = {12'd7, 5'd0, 3'b000, 5'd8, 7'b0010011}; // ADDI x8,x0,7
 
         repeat (2) @(posedge clk);
         #1 reset = 1'b0;
         run_enable = 1'b1;
 
-        for (step = 0; step < 14; step = step + 1) begin
+        for (step = 0; step < 22; step = step + 1) begin
             @(negedge clk);
-            if (step == 10 || step == 11) begin
+            if (step == 18 || step == 19) begin
                 if (!instruction_valid || !illegal_instruction)
                     $fatal(1, "Expected detected memory fault at PC=%0d", pc);
             end else if (!instruction_valid || illegal_instruction) begin
@@ -92,7 +94,7 @@ module tb_nova_x1_load_store;
 
         run_enable = 1'b0;
         #1;
-        if (pc !== 64'd56) $fatal(1, "PC expected 56, got %0d", pc);
+        if (pc !== 64'd88) $fatal(1, "PC expected 88, got %0d", pc);
         if (dut.execute_unit.registers.registers[3] !== 64'd42)
             $fatal(1, "LW result x3 expected 42");
         if (dut.execute_unit.registers.registers[4] !== 64'd43)
@@ -107,12 +109,32 @@ module tb_nova_x1_load_store;
             $fatal(1, "Core did not continue after detected memory faults");
         if (dut.execute_unit.registers.registers[9] !== 64'd43)
             $fatal(1, "Misaligned SW must not modify the stored byte");
+        if (dut.execute_unit.registers.registers[10] !== 64'hffff_ffff_ffff_ff80)
+            $fatal(1, "LH sign extension result incorrect");
+        if (dut.execute_unit.registers.registers[11] !== 64'hff80)
+            $fatal(1, "LHU zero extension result incorrect");
+        if (dut.execute_unit.registers.registers[12] !== 64'hffff_ffff_ffff_ff80)
+            $fatal(1, "LW sign extension result incorrect");
+        if (dut.execute_unit.registers.registers[13] !== 64'h0000_0000_ffff_ff80)
+            $fatal(1, "LWU zero extension result incorrect");
+        if (dut.execute_unit.registers.registers[14] !== 64'hffff_ffff_ffff_ff80)
+            $fatal(1, "LD result incorrect");
         if (dut.data_memory.memory[64] !== 8'h2a ||
             dut.data_memory.memory[65] !== 8'h2b ||
-            dut.data_memory.memory[66] !== 8'h80)
+            dut.data_memory.memory[66] !== 8'h80 ||
+            dut.data_memory.memory[68] !== 8'h80 ||
+            dut.data_memory.memory[69] !== 8'hff ||
+            dut.data_memory.memory[70] !== 8'hff ||
+            dut.data_memory.memory[71] !== 8'hff ||
+            dut.data_memory.memory[72] !== 8'h80 ||
+            dut.data_memory.memory[73] !== 8'hff ||
+            dut.data_memory.memory[74] !== 8'hff ||
+            dut.data_memory.memory[75] !== 8'hff ||
+            dut.data_memory.memory[80] !== 8'h80 ||
+            dut.data_memory.memory[87] !== 8'hff)
             $fatal(1, "Data memory byte contents incorrect");
 
-        $display("PASS: NOVA X1 core load/store integration and fault suppression");
+        $display("PASS: NOVA X1 core all load/store widths and fault suppression");
         $finish;
     end
 endmodule
