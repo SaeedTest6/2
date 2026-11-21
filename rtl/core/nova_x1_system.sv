@@ -3,7 +3,8 @@ module nova_x1_system #(
     parameter integer IMEM_ADDR_WIDTH = 8,
     parameter IMEM_INIT_FILE = "",
     parameter integer DMEM_DEPTH_BYTES = 4096,
-    parameter DMEM_INIT_FILE = ""
+    parameter DMEM_INIT_FILE = "",
+    parameter logic [63:0] TRAP_VECTOR = 64'h0000_0000_0000_0100
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -11,7 +12,10 @@ module nova_x1_system #(
     output logic [63:0] pc,
     output logic        instruction_valid,
     output logic        illegal_instruction,
-    output logic [63:0] execution_result
+    output logic [63:0] execution_result,
+    output logic        trap_taken,
+    output logic [63:0] trap_epc,
+    output logic [3:0]  trap_cause
 );
     logic [31:0] instruction;
 
@@ -26,7 +30,8 @@ module nova_x1_system #(
 
     nova_x1_core #(
         .DMEM_DEPTH_BYTES(DMEM_DEPTH_BYTES),
-        .DMEM_INIT_FILE(DMEM_INIT_FILE)
+        .DMEM_INIT_FILE(DMEM_INIT_FILE),
+        .TRAP_VECTOR(TRAP_VECTOR)
     ) core (
         .clk(clk),
         .reset(reset),
@@ -35,6 +40,9 @@ module nova_x1_system #(
         .pc(pc),
         .instruction_valid(instruction_valid),
         .illegal_instruction(illegal_instruction),
-        .execution_result(execution_result)
+        .execution_result(execution_result),
+        .trap_taken(trap_taken),
+        .trap_epc(trap_epc),
+        .trap_cause(trap_cause)
     );
 endmodule
