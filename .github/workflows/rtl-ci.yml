@@ -1,0 +1,20 @@
+name: NOVA X1 RTL CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  simulation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+      - name: Run self-checking RTL tests
+        run: make test
