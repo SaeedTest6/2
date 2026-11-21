@@ -1,9 +1,9 @@
 # NOVA X1 Instruction Set — Load/Store Extension (Draft v0.1)
 
-This document extends `isa_v0.1.md` with the load and store instruction
-subset (implementation-sequence step 4). It is a draft, not a frozen
-public ISA. The encoding borrows the practical field layout of familiar
-RISC-style formats, consistent with the arithmetic subset.
+This document specifies the implemented NOVA X1 load/store instruction
+subset. It remains a draft, not a frozen public ISA. The encoding borrows
+practical field layouts from familiar RISC-style formats, consistent with
+the arithmetic subset.
 
 ## Design rule
 
@@ -121,13 +121,10 @@ documentation.
 
 ## What this extension does not define
 
-- The decoder extension that recognises opcodes `0000011` and
-  `0100011` and produces the load/store control signals. The decoder
-  is a separate increment; the memory is deliberately independent of
-  it and takes `funct3` directly.
-- The core integration (effective-address computation, load writeback,
-  store data selection, and the misaligned/illegal response). The
-  memory exposes `misaligned` and `access_error` for that step.
+- The decoder and core integration are implemented. The decoder recognises
+  load/store opcodes, computes I-/S-type immediates, and rejects reserved
+  function fields. The core computes effective addresses, performs load
+  writeback, and blocks invalid stores or load writeback on memory faults.
 - Caches, MMU, virtual memory, memory-mapped I/O, and atomic
   operations. The memory is a plain byte-addressable RAM.
 - Multi-cycle or split handling of unaligned accesses (see the
