@@ -32,6 +32,11 @@ run_test tb_nova_x1_branch \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
     rtl/core/nova_x1_core.sv tb/tb_nova_x1_branch.sv
+run_test tb_nova_x1_jump \
+    rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
+    rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
+    rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
+    rtl/core/nova_x1_core.sv tb/tb_nova_x1_jump.sv
 run_test tb_nova_x1_imem rtl/memory/nova_x1_imem.sv tb/tb_nova_x1_imem.sv
 run_test tb_nova_x1_system \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
