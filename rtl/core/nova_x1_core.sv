@@ -10,30 +10,21 @@ module nova_x1_core (
 );
     logic result_zero;
     logic branch_taken;
-    logic [63:0] branch_offset;
+    logic [63:0] branch_target;
 
-    // Branch targets are PC-relative. The PC module gives redirect priority
-    // over sequential advancement; redirect is qualified by run_enable.
     nova_x1_pc program_counter (
-        .clk(clk),
-        .reset(reset),
-        .enable(run_enable),
+        .clk(clk), .reset(reset), .enable(run_enable),
         .redirect(run_enable && branch_taken),
-        .redirect_address(pc + branch_offset),
-        .next_address(pc + 64'd4),
-        .pc(pc)
+        .redirect_address(branch_target),
+        .next_address(pc + 64'd4), .pc(pc)
     );
 
     nova_x1_execute execute_unit (
-        .clk(clk),
-        .reset(reset),
-        .writeback_enable(run_enable),
-        .instruction(instruction),
+        .clk(clk), .reset(reset), .writeback_enable(run_enable),
+        .instruction(instruction), .current_pc(pc),
         .instruction_valid(instruction_valid),
         .illegal_instruction(illegal_instruction),
-        .execution_result(execution_result),
-        .result_zero(result_zero),
-        .branch_taken(branch_taken),
-        .branch_offset(branch_offset)
+        .execution_result(execution_result), .result_zero(result_zero),
+        .branch_taken(branch_taken), .branch_offset(branch_target)
     );
 endmodule
