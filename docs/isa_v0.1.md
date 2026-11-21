@@ -42,6 +42,6 @@ Opcode `1101111`. imm[20]=[31], imm[10:1]=[30:21], imm[11]=[20], imm[19:12]=[19:
 
 ## Implementation status
 Implemented: integer R/I ALU subset, BEQ/BNE/BLT/BGE/BLTU/BGEU, JAL, JALR, LB/LH/LW/LD/LBU/LHU/LWU, SB/SH/SW/SD, sequential PC update, instruction ROM, and byte-addressable little-endian data RAM.
-Not yet implemented: architectural traps/exceptions, interrupts, privilege modes, caches, MMU, pipeline, forwarding, hazard handling, assembler/compiler toolchain. Misaligned and out-of-range data accesses are detected and suppress the affected memory/register side effect, but do not yet transfer control to a trap handler.
+Machine trap entry is implemented for illegal instructions and memory faults, with `mtvec` (0x305), `mepc` (0x341), and `mcause` (0x342). The CSR instructions CSRRW/CSRRS/CSRRC and their immediate forms access these registers; `MRET` restores PC from `mepc`. Unsupported CSR addresses are illegal. Not yet implemented: privilege modes, interrupts, caches, MMU, pipeline, forwarding, hazard handling, assembler/compiler toolchain.
 
 All ISA details remain draft pending broader verification and architectural review.
