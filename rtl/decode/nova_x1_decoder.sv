@@ -13,6 +13,9 @@ module nova_x1_decoder (
     output logic        is_load,
     output logic        is_store,
     output logic [2:0]  mem_funct3,
+    output logic        is_csr,
+    output logic        is_mret,
+    output logic [2:0]  csr_funct3,
     output logic [4:0]  rs1,
     output logic [4:0]  rs2,
     output logic [4:0]  rd,
@@ -41,6 +44,9 @@ module nova_x1_decoder (
         is_load          = 1'b0;
         is_store         = 1'b0;
         mem_funct3       = 3'b000;
+        is_csr           = 1'b0;
+        is_mret          = 1'b0;
+        csr_funct3       = 3'b000;
         rs1              = instruction[19:15];
         rs2              = instruction[24:20];
         rd               = instruction[11:7];
@@ -113,6 +119,25 @@ module nova_x1_decoder (
                     default: ;
                 endcase
             end
+            7'b1110011: begin // Machine CSR access and MRET
+                if (instruction == 32'h3020_0073) begin
+                    is_mret = 1'b1;
+                    valid = 1'b1;
+                end else if (funct3 == 3'b001 || funct3 == 3'b010 ||
+                             funct3 == 3'b011 || funct3 == 3'b101 ||
+                             funct3 == 3'b110 || funct3 == 3'b111) begin
+                    is_csr = 1'b1;
+                    csr_funct3 = funct3;
+                    writes_rd = 1'b1;
+                    if (funct3[2]) begin
+                        uses_immediate = 1'b1;
+                        immediate = {59'b0,instruction[19:15]};
+                    end else begin
+                        uses_rs1 = 1'b1;
+                    end
+                    valid = 1'b1;
+                end
+            end
             7'b1101111: begin // JAL: signed J-type PC-relative target
                 writes_rd=1'b1; is_jump=1'b1;
                 immediate={{43{instruction[31]}},instruction[31],
@@ -142,6 +167,9 @@ module nova_x1_decoder (
             is_load        = 1'b0;
             is_store       = 1'b0;
             mem_funct3     = 3'b000;
+            is_csr         = 1'b0;
+            is_mret        = 1'b0;
+            csr_funct3     = 3'b000;
             immediate      = 64'b0;
             alu_op         = NOVA_ADD;
         end
