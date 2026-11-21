@@ -132,7 +132,16 @@ module tb_nova_x1_load_store;
             dut.data_memory.memory[75] !== 8'hff ||
             dut.data_memory.memory[80] !== 8'h80 ||
             dut.data_memory.memory[87] !== 8'hff)
-            $fatal(1, "Data memory byte contents incorrect");
+            begin
+                $display("DMEM[64..87] = %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h",
+                    dut.data_memory.memory[64], dut.data_memory.memory[65], dut.data_memory.memory[66], dut.data_memory.memory[67],
+                    dut.data_memory.memory[68], dut.data_memory.memory[69], dut.data_memory.memory[70], dut.data_memory.memory[71],
+                    dut.data_memory.memory[72], dut.data_memory.memory[73], dut.data_memory.memory[74], dut.data_memory.memory[75],
+                    dut.data_memory.memory[76], dut.data_memory.memory[77], dut.data_memory.memory[78], dut.data_memory.memory[79],
+                    dut.data_memory.memory[80], dut.data_memory.memory[81], dut.data_memory.memory[82], dut.data_memory.memory[83],
+                    dut.data_memory.memory[84], dut.data_memory.memory[85], dut.data_memory.memory[86], dut.data_memory.memory[87]);
+                $fatal(1, "Data memory byte contents incorrect");
+            end
 
         $display("PASS: NOVA X1 core all load/store widths and fault suppression");
         $finish;
