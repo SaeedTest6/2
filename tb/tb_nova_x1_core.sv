@@ -63,7 +63,7 @@ module tb_nova_x1_core;
         if (dut.execute_unit.registers.registers[4] !== 64'd25)
             $fatal(1, "x4 expected 25");
 
-        $display("PASS: NOVA X1 fetched and executed a four-instruction instruction_memory");
+        $display("PASS: NOVA X1 fetched and executed a four-instruction program");
         $finish;
     end
 endmodule
