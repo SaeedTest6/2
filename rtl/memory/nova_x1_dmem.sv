@@ -111,7 +111,7 @@ module nova_x1_dmem #(
     // Only the bytes the access size needs are read, and only when the
     // access is valid, so an out-of-range or misaligned access can never
     // pull an X out of the array.
-    always_comb begin
+    always @* begin
         read_data = 64'b0;
         if (!write_enable && access_ok) begin
             case (size_sel)
