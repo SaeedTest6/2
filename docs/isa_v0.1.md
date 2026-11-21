@@ -41,7 +41,7 @@ Opcode `1101111`. imm[20]=[31], imm[10:1]=[30:21], imm[11]=[20], imm[19:12]=[19:
 - Unsupported encodings are illegal and must not execute as another operation.
 
 ## Implementation status
-Implemented: integer R/I ALU subset, BEQ/BNE/BLT/BGE/BLTU/BGEU, JAL, JALR, sequential PC update, instruction ROM.
-Not yet implemented: load/store, exceptions, interrupts, privilege modes, caches, MMU, pipeline, forwarding, hazard handling, assembler/compiler toolchain.
+Implemented: integer R/I ALU subset, BEQ/BNE/BLT/BGE/BLTU/BGEU, JAL, JALR, LB/LH/LW/LD/LBU/LHU/LWU, SB/SH/SW/SD, sequential PC update, instruction ROM, and byte-addressable little-endian data RAM.
+Not yet implemented: architectural traps/exceptions, interrupts, privilege modes, caches, MMU, pipeline, forwarding, hazard handling, assembler/compiler toolchain. Misaligned and out-of-range data accesses are detected and suppress the affected memory/register side effect, but do not yet transfer control to a trap handler.
 
 All ISA details remain draft pending broader verification and architectural review.
