@@ -7,7 +7,9 @@ module tb_nova_x1_load_store;
     logic [63:0] pc;
     logic instruction_valid;
     logic illegal_instruction;
-    logic [63:0] execution_result;
+    logic [63:0] execution_result, trap_epc;
+    logic trap_taken;
+    logic [3:0] trap_cause;
     logic [31:0] program_words [0:21];
     integer step;
 
@@ -41,7 +43,7 @@ module tb_nova_x1_load_store;
         endcase
     end
 
-    nova_x1_core #(.DMEM_DEPTH_BYTES(256)) dut (
+    nova_x1_core #(.DMEM_DEPTH_BYTES(256), .TRAP_VECTOR(64'd80)) dut (
         .clk(clk),
         .reset(reset),
         .run_enable(run_enable),
@@ -49,7 +51,8 @@ module tb_nova_x1_load_store;
         .pc(pc),
         .instruction_valid(instruction_valid),
         .illegal_instruction(illegal_instruction),
-        .execution_result(execution_result)
+        .execution_result(execution_result),
+        .trap_taken(trap_taken), .trap_epc(trap_epc), .trap_cause(trap_cause)
     );
 
     initial begin
@@ -82,7 +85,7 @@ module tb_nova_x1_load_store;
 
         for (step = 0; step < 22; step = step + 1) begin
             @(negedge clk);
-            if (step == 18 || step == 19) begin
+            if (step == 18) begin
                 if (!instruction_valid || !illegal_instruction)
                     $fatal(1, "Expected detected memory fault at PC=%0d", pc);
             end else if (!instruction_valid || illegal_instruction) begin
@@ -94,7 +97,9 @@ module tb_nova_x1_load_store;
 
         run_enable = 1'b0;
         #1;
-        if (pc !== 64'd88) $fatal(1, "PC expected 88, got %0d", pc);
+        if (pc !== 64'd92) $fatal(1, "PC expected 92 after trap handler, got %0d", pc);
+        if (trap_epc !== 64'd72 || trap_cause !== 4'd4)
+            $fatal(1, "Misaligned load trap state incorrect");
         if (dut.execute_unit.registers.registers[3] !== 64'd42)
             $fatal(1, "LW result x3 expected 42");
         if (dut.execute_unit.registers.registers[4] !== 64'd43)
@@ -106,7 +111,7 @@ module tb_nova_x1_load_store;
         if (dut.execute_unit.registers.registers[7] !== 64'd0)
             $fatal(1, "Misaligned LW must not write x7");
         if (dut.execute_unit.registers.registers[8] !== 64'd7)
-            $fatal(1, "Core did not continue after detected memory faults");
+            $fatal(1, "Trap handler did not continue execution after the memory fault");
         if (dut.execute_unit.registers.registers[9] !== 64'd43)
             $fatal(1, "Misaligned SW must not modify the stored byte");
         if (dut.execute_unit.registers.registers[10] !== 64'hffff_ffff_ffff_ff80)
@@ -133,15 +138,7 @@ module tb_nova_x1_load_store;
             dut.data_memory.memory[80] !== 8'h80 ||
             dut.data_memory.memory[87] !== 8'hff)
             begin
-                $display("DMEM[64..87] = %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h %02h",
-                    dut.data_memory.memory[64], dut.data_memory.memory[65], dut.data_memory.memory[66], dut.data_memory.memory[67],
-                    dut.data_memory.memory[68], dut.data_memory.memory[69], dut.data_memory.memory[70], dut.data_memory.memory[71],
-                    dut.data_memory.memory[72], dut.data_memory.memory[73], dut.data_memory.memory[74], dut.data_memory.memory[75],
-                    dut.data_memory.memory[76], dut.data_memory.memory[77], dut.data_memory.memory[78], dut.data_memory.memory[79],
-                    dut.data_memory.memory[80], dut.data_memory.memory[81], dut.data_memory.memory[82], dut.data_memory.memory[83],
-                    dut.data_memory.memory[84], dut.data_memory.memory[85], dut.data_memory.memory[86], dut.data_memory.memory[87]);
                 $fatal(1, "Data memory byte contents incorrect");
-            end
 
         $display("PASS: NOVA X1 core all load/store widths and fault suppression");
         $finish;
