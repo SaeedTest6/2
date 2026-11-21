@@ -24,9 +24,9 @@ run_test tb_nova_x1_pc \
 run_test tb_nova_x1_decoder \
     rtl/common/nova_pkg.sv rtl/decode/nova_x1_decoder.sv tb/tb_nova_x1_decoder.sv
 
-run_test tb_nova_x1_execute \\
-    rtl/common/nova_pkg.sv rtl/common/nova_pkg.sv rtl/decode/nova_x1_decoder.sv \\
-    rtl/registers/nova_x1_regfile.sv rtl/execution/nova_x1_alu.sv \\
+run_test tb_nova_x1_execute \
+    rtl/common/nova_pkg.sv rtl/decode/nova_x1_decoder.sv \
+    rtl/registers/nova_x1_regfile.sv rtl/execution/nova_x1_alu.sv \
     rtl/execution/nova_x1_execute.sv tb/tb_nova_x1_execute.sv
 
 echo "ALL NOVA X1 STARTER TESTS PASSED"
