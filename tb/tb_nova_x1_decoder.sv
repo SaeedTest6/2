@@ -45,6 +45,16 @@ module tb_nova_x1_decoder;
         instruction = {7'b1111111, 5'd2, 5'd1, 3'b000, 5'd3, 7'b0110011};
         #1;
         check(!valid && illegal, "Unsupported R-type encoding must be illegal");
+        // Reserved branch funct3 must not be accepted.
+        instruction = {1'b0,6'b0,5'd2,5'd1,3'b010,4'b0,1'b0,7'b1100011};
+        #1;
+        check(!valid && illegal, "Reserved branch funct3 must be illegal");
+
+        // JALR only accepts funct3=000.
+        instruction = {12'd0,5'd1,3'b001,5'd3,7'b1100111};
+        #1;
+        check(!valid && illegal, "Reserved JALR funct3 must be illegal");
+
 
         $display("PASS: NOVA X1 decoder tests");
         $finish;
