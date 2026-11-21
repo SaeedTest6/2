@@ -1,7 +1,9 @@
 module nova_x1_system #(
     parameter integer IMEM_DEPTH_WORDS = 256,
     parameter integer IMEM_ADDR_WIDTH = 8,
-    parameter IMEM_INIT_FILE = ""
+    parameter IMEM_INIT_FILE = "",
+    parameter integer DMEM_DEPTH_BYTES = 4096,
+    parameter DMEM_INIT_FILE = ""
 ) (
     input  logic        clk,
     input  logic        reset,
@@ -22,7 +24,10 @@ module nova_x1_system #(
         .instruction(instruction)
     );
 
-    nova_x1_core core (
+    nova_x1_core #(
+        .DMEM_DEPTH_BYTES(DMEM_DEPTH_BYTES),
+        .DMEM_INIT_FILE(DMEM_INIT_FILE)
+    ) core (
         .clk(clk),
         .reset(reset),
         .run_enable(run_enable),
