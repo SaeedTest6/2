@@ -27,11 +27,17 @@ module nova_x1_core #(
     logic memory_access_error;
     logic exception_valid;
     logic [3:0] exception_cause;
+    logic [63:0] csr_read_data;
+    logic csr_access_error;
+    logic csr_write_enable;
+    logic [11:0] csr_address;
+    logic [63:0] csr_write_data;
+    logic [63:0] mtvec;
 
     nova_x1_pc program_counter (
         .clk(clk), .reset(reset), .enable(run_enable),
         .redirect(run_enable && (exception_valid || branch_taken)),
-        .redirect_address(exception_valid ? TRAP_VECTOR : branch_target),
+        .redirect_address(exception_valid ? mtvec : branch_target),
         .next_address(pc + 64'd4), .pc(pc)
     );
 
@@ -41,12 +47,16 @@ module nova_x1_core #(
         .memory_read_data(memory_read_data),
         .memory_misaligned(memory_misaligned),
         .memory_access_error(memory_access_error),
+        .csr_read_data(csr_read_data), .mepc_value(trap_epc),
+        .csr_access_error(csr_access_error),
         .memory_write_enable(memory_write_enable),
         .memory_address(memory_address),
         .memory_write_data(memory_write_data),
         .memory_funct3(memory_funct3),
         .exception_valid(exception_valid),
         .exception_cause(exception_cause),
+        .csr_write_enable(csr_write_enable), .csr_address(csr_address),
+        .csr_write_data(csr_write_data),
         .instruction_valid(instruction_valid),
         .illegal_instruction(illegal_instruction),
         .execution_result(execution_result), .result_zero(result_zero),
@@ -55,13 +65,32 @@ module nova_x1_core #(
 
     assign trap_taken = run_enable && exception_valid && !reset;
 
+    always_comb begin
+        csr_access_error = 1'b0;
+        csr_read_data = 64'b0;
+        case (instruction[31:20])
+            12'h305: csr_read_data = mtvec;
+            12'h341: csr_read_data = trap_epc;
+            12'h342: csr_read_data = {60'b0,trap_cause};
+            default: csr_access_error = 1'b1;
+        endcase
+    end
+
     always_ff @(posedge clk) begin
         if (reset) begin
+            mtvec <= TRAP_VECTOR;
             trap_epc <= 64'b0;
             trap_cause <= 4'd0;
         end else if (trap_taken) begin
             trap_epc <= pc;
             trap_cause <= exception_cause;
+        end else if (csr_write_enable) begin
+            case (csr_address)
+                12'h305: mtvec <= {csr_write_data[63:2],2'b00};
+                12'h341: trap_epc <= csr_write_data;
+                12'h342: trap_cause <= csr_write_data[3:0];
+                default: ;
+            endcase
         end
     end
 
