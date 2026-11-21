@@ -1,7 +1,7 @@
-# NOVA X1 Instruction Set — Draft v0.3
+# NOVA X1 Instruction Set — Draft v0.4
 
 ## Design rule
-NOVA X1 uses fixed-width 32-bit instructions. The encoding is custom to NOVA and borrows practical RISC-style field layouts. This is an implementation draft, not a frozen public ISA.
+NOVA X1 uses fixed-width 32-bit instructions. The encoding is custom to NOVA and borrows practical RISC-style field layouts. This remains an implementation draft, not a frozen public ISA.
 
 ## R format — integer register operations
 Fields: funct7=[31:25], rs2=[24:20], rs1=[19:15], funct3=[14:12], rd=[11:7], opcode=[6:0]. Opcode `0110011`.
@@ -13,9 +13,17 @@ Immediate=[31:20] signed 12-bit, rs1=[19:15], funct3=[14:12], rd=[11:7].
 - JALR uses opcode `1100111`, funct3 `000`; target is `(rs1 + sign_extended_imm) & ~1`.
 
 ## B format — conditional branches
-Opcode `1100011`. imm[12]=[31], imm[10:5]=[30:25], rs2=[24:20], rs1=[19:15], funct3=[14:12], imm[4:1]=[11:8], imm[11]=[7], imm[0]=0. Sign-extended 13-bit byte offset is added to the current PC.
-- BEQ, funct3 `000`: branch if rs1 == rs2.
-- BNE, funct3 `001`: branch if rs1 != rs2.
+Opcode `1100011`. imm[12]=[31], imm[10:5]=[30:25], rs2=[24:20], rs1=[19:15], funct3=[14:12], imm[4:1]=[11:8], imm[11]=[7], imm[0]=0. The signed 13-bit byte offset is added to the current PC.
+
+| Instruction | funct3 | Condition |
+|---|---|---|
+| BEQ | 000 | rs1 == rs2 |
+| BNE | 001 | rs1 != rs2 |
+| BLT | 100 | signed rs1 < signed rs2 |
+| BGE | 101 | signed rs1 >= signed rs2 |
+| BLTU | 110 | unsigned rs1 < unsigned rs2 |
+| BGEU | 111 | unsigned rs1 >= unsigned rs2 |
+
 Other branch funct3 values are illegal.
 
 ## J format — JAL
@@ -23,19 +31,17 @@ Opcode `1101111`. imm[20]=[31], imm[10:1]=[30:21], imm[11]=[20], imm[19:12]=[19:
 
 ## Control-flow rules
 - Branch and JAL targets are PC-relative byte addresses.
-- JALR target is computed from rs1 plus its signed immediate, with bit 0 cleared.
-- JAL and JALR write the address of the following instruction (PC+4) to rd.
-- x0 remains hardwired to zero, so link writes to x0 are discarded.
-- Current instruction alignment is 4 bytes; compressed instructions are not implemented.
+- JALR target is rs1 plus its signed immediate, with bit zero cleared.
+- JAL and JALR write PC+4 to rd; writes to x0 are discarded.
+- Instructions are 32-bit aligned; compressed instructions are not implemented.
 
 ## Architectural rules
 - 64-bit integer datapath, 32 general-purpose registers, x0 constant zero.
-- Instructions are fixed 32-bit words.
 - Arithmetic wraps modulo 2^64.
 - Unsupported encodings are illegal and must not execute as another operation.
 
 ## Implementation status
-Implemented: integer R/I ALU subset, BEQ, BNE, JAL, JALR, sequential PC update, instruction ROM.
+Implemented: integer R/I ALU subset, BEQ/BNE/BLT/BGE/BLTU/BGEU, JAL, JALR, sequential PC update, instruction ROM.
 Not yet implemented: load/store, exceptions, interrupts, privilege modes, caches, MMU, pipeline, forwarding, hazard handling, assembler/compiler toolchain.
 
 All ISA details remain draft pending broader verification and architectural review.
