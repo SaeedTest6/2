@@ -1,6 +1,6 @@
 # NOVA X1 — Architecture Notes
 
-**Revision:** 0.9
+**Revision:** 1.0
 
 ## Project direction
 - Project: NOVA
@@ -17,9 +17,9 @@ The simulation-oriented prototype contains a 64-bit PC, parameterized instructio
 
 BEQ/BNE compare equality. BLT/BGE use signed 64-bit comparisons; BLTU/BGEU use unsigned 64-bit comparisons. Branch and JAL targets are PC-relative. JALR computes rs1 plus signed I-immediate and clears target bit zero. The core remains single-issue and executes one instruction per enabled cycle.
 
-Unsupported encodings assert `illegal_instruction`. The decoder also forces all architectural control outputs inactive for an illegal encoding: no source-register use, destination write, immediate operation, branch, or jump is requested. A trap/exception mechanism is not implemented yet; the current prototype continues its sequential PC update when `run_enable` is asserted, so this signal is detection-only rather than architectural exception handling.
+Unsupported encodings assert `illegal_instruction`. The decoder also forces all architectural control outputs inactive for an illegal encoding: no source-register use, destination write, immediate operation, branch, or jump is requested. A minimal synchronous trap-entry mechanism is now implemented. When an illegal instruction or memory fault is observed on an enabled cycle, the core captures the faulting PC in `trap_epc`, captures the cause in `trap_cause`, and redirects the PC to the configurable `TRAP_VECTOR` (default `0x100`).
 
-The decoder explicitly rejects reserved branch, JALR, load, and store function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. The data memory reports misaligned and out-of-range accesses; load writeback is suppressed and stores are blocked on memory faults. These cases are covered by self-checking simulation tests. Memory faults currently raise the detection signal only: there is no trap/exception handler, and the PC still advances sequentially.
+The decoder explicitly rejects reserved branch, JALR, load, and store function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. The data memory reports misaligned and out-of-range accesses; load writeback is suppressed and stores are blocked on memory faults. These cases are covered by self-checking simulation tests. Memory faults now enter the same trap path as illegal instructions. The initial trap model is intentionally small: no privilege modes, nested-trap stack, interrupt handling, or trap-return instruction exists yet. Software must provide a handler at the configured vector; trap state is exposed as core/system outputs for now.
 
 ## Initial conventions
 - Data width: 64 bits
@@ -33,7 +33,7 @@ The decoder explicitly rejects reserved branch, JALR, load, and store function f
 1. Verify the sequential in-order baseline and control flow.
 2. Define and verify a byte-addressable data-memory interface.
 3. Integrate loads/stores and byte/halfword/word/doubleword semantics into the decoder and single-cycle core.
-4. Define architectural traps for misaligned and out-of-range accesses, then interrupts, privilege levels, and architectural state.
+4. Extend the initial trap-entry mechanism with trap return, privilege state, nested-trap policy, and interrupts.
 5. Add pipeline stages, hazard detection, and forwarding.
 6. Investigate caches, MMU, vector execution, and performance-per-watt improvements.
 7. Only after a stable baseline, evaluate out-of-order execution and wider issue.
@@ -41,7 +41,7 @@ The decoder explicitly rejects reserved branch, JALR, load, and store function f
 
 ## Open architecture decisions
 - Virtual and physical address widths
-- Privilege levels and exception model
+- Privilege levels and extended exception model
 - Interrupt architecture
 - Memory consistency model
 - Cache hierarchy and coherence
