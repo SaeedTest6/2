@@ -53,7 +53,7 @@ module nova_x1_core #(
         .branch_taken(branch_taken), .branch_offset(branch_target)
     );
 
-    assign trap_taken = run_enable && exception_valid;
+    assign trap_taken = run_enable && exception_valid && !reset;
 
     always_ff @(posedge clk) begin
         if (reset) begin
