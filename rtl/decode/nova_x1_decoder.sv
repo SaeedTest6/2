@@ -6,6 +6,8 @@ module nova_x1_decoder (
     output logic        uses_rs2,
     output logic        writes_rd,
     output logic        uses_immediate,
+    output logic        is_branch,
+    output logic        branch_not_equal,
     output logic [4:0]  rs1,
     output logic [4:0]  rs2,
     output logic [4:0]  rd,
@@ -19,21 +21,23 @@ module nova_x1_decoder (
     logic [6:0] funct7;
 
     always_comb begin
-        opcode         = instruction[6:0];
-        funct3         = instruction[14:12];
-        funct7         = instruction[31:25];
+        opcode          = instruction[6:0];
+        funct3          = instruction[14:12];
+        funct7          = instruction[31:25];
 
-        valid          = 1'b0;
-        illegal        = 1'b1;
-        uses_rs1       = 1'b0;
-        uses_rs2       = 1'b0;
-        writes_rd      = 1'b0;
-        uses_immediate = 1'b0;
-        rs1            = instruction[19:15];
-        rs2            = instruction[24:20];
-        rd             = instruction[11:7];
-        immediate      = {{52{instruction[31]}}, instruction[31:20]};
-        alu_op         = NOVA_ADD;
+        valid           = 1'b0;
+        illegal         = 1'b1;
+        uses_rs1        = 1'b0;
+        uses_rs2        = 1'b0;
+        writes_rd       = 1'b0;
+        uses_immediate  = 1'b0;
+        is_branch       = 1'b0;
+        branch_not_equal= 1'b0;
+        rs1             = instruction[19:15];
+        rs2             = instruction[24:20];
+        rd              = instruction[11:7];
+        immediate       = {{52{instruction[31]}}, instruction[31:20]};
+        alu_op          = NOVA_ADD;
 
         case (opcode)
             7'b0110011: begin // Register-register arithmetic
@@ -64,7 +68,7 @@ module nova_x1_decoder (
                 writes_rd      = 1'b1;
                 uses_immediate = 1'b1;
                 case (funct3)
-                    3'b000: begin alu_op = NOVA_ADD; valid = 1'b1; end // ADDI
+                    3'b000: begin alu_op = NOVA_ADD; valid = 1'b1; end
                     3'b010: begin alu_op = NOVA_SLT; valid = 1'b1; end
                     3'b011: begin alu_op = NOVA_SLTU; valid = 1'b1; end
                     3'b100: begin alu_op = NOVA_XOR; valid = 1'b1; end
@@ -88,6 +92,20 @@ module nova_x1_decoder (
                             valid = 1'b1;
                         end
                     end
+                    default: ;
+                endcase
+            end
+
+            7'b1100011: begin // Conditional branches: BEQ and BNE
+                uses_rs1 = 1'b1;
+                uses_rs2 = 1'b1;
+                is_branch = 1'b1;
+                immediate = {{51{instruction[31]}}, instruction[31],
+                             instruction[7], instruction[30:25],
+                             instruction[11:8], 1'b0};
+                case (funct3)
+                    3'b000: valid = 1'b1; // BEQ
+                    3'b001: begin valid = 1'b1; branch_not_equal = 1'b1; end // BNE
                     default: ;
                 endcase
             end
