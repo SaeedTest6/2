@@ -5,8 +5,8 @@ NOVA is an experimental custom-ISA 64-bit processor RTL project. The current del
 ## Current implementation
 - 64-bit integer datapath and 32 integer registers (x0 hardwired to zero)
 - Register-register and immediate integer ALU subset
-- Instruction decoder with illegal-instruction detection
-- Sequential PC update and PC-relative BEQ/BNE branches
+- Illegal-instruction detection
+- Sequential PC update and six conditional branches: BEQ, BNE, BLT, BGE, BLTU, BGEU
 - JAL/JALR jumps with PC+4 link-register writeback
 - Parameterized instruction ROM and ROM-backed system wrapper
 - Self-checking Icarus Verilog testbenches and GitHub Actions CI
