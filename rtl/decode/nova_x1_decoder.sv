@@ -111,6 +111,20 @@ module nova_x1_decoder (
             end
             default: ;
         endcase
+
+        // Illegal encodings must never leak active architectural controls.
+        if (!valid) begin
+            uses_rs1       = 1'b0;
+            uses_rs2       = 1'b0;
+            writes_rd      = 1'b0;
+            uses_immediate = 1'b0;
+            is_branch      = 1'b0;
+            branch_funct3  = 3'b000;
+            is_jump        = 1'b0;
+            is_jalr        = 1'b0;
+            immediate      = 64'b0;
+            alu_op         = NOVA_ADD;
+        end
         illegal = !valid;
     end
 endmodule
