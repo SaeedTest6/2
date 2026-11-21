@@ -1,6 +1,6 @@
 # NOVA X1 — Architecture Notes
 
-**Revision:** 0.7
+**Revision:** 0.8
 
 ## Project direction
 - Project: NOVA
@@ -15,7 +15,11 @@ These are design goals, not measured or validated results.
 ## Current implementation
 The simulation-oriented prototype contains a 64-bit PC, parameterized instruction ROM, 32-bit instruction path, decoder for integer R/I ALU operations and six conditional branches, 32-entry register file with x0 hardwired to zero, 64-bit ALU, synchronous writeback, and a ROM-backed system wrapper. JAL and JALR are also implemented with PC+4 link writeback.
 
-BEQ/BNE compare equality. BLT/BGE use signed 64-bit comparisons; BLTU/BGEU use unsigned 64-bit comparisons. Branch and JAL targets are PC-relative. JALR computes rs1 plus signed I-immediate and clears target bit zero. The core remains single-issue and executes one instruction per enabled cycle. Unsupported encodings assert `illegal_instruction` and suppress register writeback. A trap/exception mechanism is not implemented yet; the current prototype continues its sequential PC update when `run_enable` is asserted, so this signal is detection-only rather than architectural exception handling.
+BEQ/BNE compare equality. BLT/BGE use signed 64-bit comparisons; BLTU/BGEU use unsigned 64-bit comparisons. Branch and JAL targets are PC-relative. JALR computes rs1 plus signed I-immediate and clears target bit zero. The core remains single-issue and executes one instruction per enabled cycle.
+
+Unsupported encodings assert `illegal_instruction`. The decoder also forces all architectural control outputs inactive for an illegal encoding: no source-register use, destination write, immediate operation, branch, or jump is requested. A trap/exception mechanism is not implemented yet; the current prototype continues its sequential PC update when `run_enable` is asserted, so this signal is detection-only rather than architectural exception handling.
+
+The decoder explicitly rejects reserved branch and JALR function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. These cases are covered by self-checking simulation tests.
 
 ## Initial conventions
 - Data width: 64 bits
