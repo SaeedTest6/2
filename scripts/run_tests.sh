@@ -21,7 +21,7 @@ run_test tb_nova_x1_regfile \
 run_test tb_nova_x1_pc \
     rtl/fetch/nova_x1_pc.sv tb/tb_nova_x1_pc.sv
 
-run_test tb_nova_x1_decoder \\
+run_test tb_nova_x1_decoder \
     rtl/common/nova_pkg.sv rtl/decode/nova_x1_decoder.sv tb/tb_nova_x1_decoder.sv
 
 echo "ALL NOVA X1 STARTER TESTS PASSED"
