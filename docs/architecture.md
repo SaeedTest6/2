@@ -1,6 +1,6 @@
 # NOVA X1 — Architecture Notes
 
-**Revision:** 0.4
+**Revision:** 0.5
 
 ## Project direction
 - Project: NOVA
@@ -13,36 +13,27 @@
 These are design goals, not measured or validated results.
 
 ## Current implementation
-The current simulation-oriented prototype consists of:
-1. A 64-bit program counter with sequential update and PC-relative branch redirect.
-2. A parameterized combinational instruction ROM, optionally initialized with `$readmemh`.
-3. A 32-bit fixed-width instruction path.
-4. A decoder for integer R-type/I-type ALU operations and conditional BEQ/BNE.
-5. A 32-entry architectural register file with x0 hardwired to zero.
-6. A 64-bit ALU and synchronous writeback.
-7. A ROM-backed system wrapper connecting instruction fetch to the execution core.
+The simulation-oriented prototype contains a 64-bit PC, parameterized instruction ROM, 32-bit instruction path, decoder for integer R/I ALU operations and BEQ/BNE/JAL/JALR, 32-entry register file with x0 hardwired to zero, 64-bit ALU, synchronous writeback, and a ROM-backed system wrapper.
 
-The core executes one instruction per enabled cycle. BEQ and BNE compare the two source registers and redirect the PC by a signed PC-relative byte offset when their condition is true.
+BEQ/BNE compare register operands and conditionally redirect to PC-relative targets. JAL redirects to PC plus its signed J-format offset. JALR redirects to (rs1 + signed I-immediate) with bit zero cleared. Both jump instructions write PC+4 to rd. The core remains single-issue and executes one instruction per enabled cycle.
 
 ## Initial conventions
 - Data width: 64 bits
 - Instruction width: 32 bits
-- Architectural general-purpose registers: 32
+- General-purpose registers: 32
 - x0: constant zero
-- Byte order planned for data memory: little-endian
+- Planned data-memory byte order: little-endian
 - Reset: synchronous, active-high
-- ALU operation selector: internal enum; it is not an instruction encoding
 
 ## Implementation strategy
-1. Verify the sequential in-order baseline.
-2. Implement and test conditional and unconditional control flow.
-3. Define a robust instruction/data memory interface with wait states.
-4. Add loads/stores and byte/halfword/word/doubleword semantics.
-5. Define exceptions, interrupts, privilege levels, and architectural state.
-6. Add pipeline stages, hazard detection, and forwarding.
-7. Investigate caches, MMU, vector execution, and performance-per-watt improvements.
-8. Only after a stable baseline, evaluate out-of-order execution and wider issue.
-9. Integrate the core into a broader monolithic SoC.
+1. Verify the sequential in-order baseline and control flow.
+2. Define a data-memory interface with explicit request/response and wait-state behavior.
+3. Add loads/stores and byte/halfword/word/doubleword semantics.
+4. Define exceptions, interrupts, privilege levels, and architectural state.
+5. Add pipeline stages, hazard detection, and forwarding.
+6. Investigate caches, MMU, vector execution, and performance-per-watt improvements.
+7. Only after a stable baseline, evaluate out-of-order execution and wider issue.
+8. Integrate the core into a broader monolithic SoC.
 
 ## Open architecture decisions
 - Virtual and physical address widths
