@@ -7,12 +7,18 @@ module nova_x1_execute (
     input  logic [63:0] memory_read_data,
     input  logic        memory_misaligned,
     input  logic        memory_access_error,
+    input  logic [63:0] csr_read_data,
+    input  logic [63:0] mepc_value,
+    input  logic        csr_access_error,
     output logic        memory_write_enable,
     output logic [63:0] memory_address,
     output logic [63:0] memory_write_data,
     output logic [2:0]  memory_funct3,
     output logic        exception_valid,
     output logic [3:0]  exception_cause,
+    output logic        csr_write_enable,
+    output logic [11:0] csr_address,
+    output logic [63:0] csr_write_data,
     output logic        instruction_valid,
     output logic        illegal_instruction,
     output logic [63:0] execution_result,
@@ -23,7 +29,9 @@ module nova_x1_execute (
     import nova_pkg::*;
     logic decoder_valid, decoder_illegal;
     logic uses_rs1, uses_rs2, writes_rd, uses_immediate;
-    logic is_branch, is_jump, is_jalr, is_load, is_store;
+    logic is_branch, is_jump, is_jalr, is_load, is_store, is_csr, is_mret;
+    logic [2:0] csr_funct3;
+    logic [63:0] csr_source;
     logic [2:0] branch_funct3, mem_funct3;
     logic [4:0] rs1, rs2, rd;
     logic [63:0] immediate;
@@ -42,7 +50,8 @@ module nova_x1_execute (
         .uses_immediate(uses_immediate), .is_branch(is_branch),
         .branch_funct3(branch_funct3), .is_jump(is_jump),
         .is_jalr(is_jalr), .is_load(is_load), .is_store(is_store),
-        .mem_funct3(mem_funct3), .rs1(rs1), .rs2(rs2), .rd(rd),
+        .mem_funct3(mem_funct3), .is_csr(is_csr), .is_mret(is_mret),
+        .csr_funct3(csr_funct3), .rs1(rs1), .rs2(rs2), .rd(rd),
         .immediate(immediate), .alu_op(alu_op)
     );
 
@@ -50,7 +59,7 @@ module nova_x1_execute (
                           (memory_misaligned || memory_access_error);
     assign instruction_valid = decoder_valid;
     assign illegal_instruction = decoder_illegal || memory_fault;
-    assign exception_valid = illegal_instruction;
+    assign exception_valid = illegal_instruction || (is_csr && csr_access_error);
     always_comb begin
         exception_cause = 4'd0;
         if (decoder_illegal)
@@ -59,6 +68,8 @@ module nova_x1_execute (
             exception_cause = memory_misaligned ? 4'd4 : 4'd5;
         else if (memory_fault && is_store)
             exception_cause = memory_misaligned ? 4'd6 : 4'd7;
+        else if (is_csr && csr_access_error)
+            exception_cause = 4'd2;
     end
 
     nova_x1_regfile registers (
@@ -76,10 +87,22 @@ module nova_x1_execute (
         memory_address = register_data_a + immediate;
         memory_write_data = register_data_b;
         memory_funct3 = mem_funct3;
+        csr_address = instruction[31:20];
+        csr_source = uses_immediate ? immediate : register_data_a;
+        csr_write_enable = writeback_enable && decoder_valid && is_csr &&
+                           !csr_access_error && !reset &&
+                           ((csr_funct3[1:0] == 2'b01) || (csr_source != 64'b0));
+        case (csr_funct3[1:0])
+            2'b01: csr_write_data = csr_source;
+            2'b10: csr_write_data = csr_read_data | csr_source;
+            2'b11: csr_write_data = csr_read_data & ~csr_source;
+            default: csr_write_data = csr_read_data;
+        endcase
         memory_write_enable = writeback_enable && decoder_valid &&
                               is_store && !reset;
-        execution_result = is_load ? memory_read_data :
-                           (is_jump ? link_value : alu_result);
+        execution_result = is_csr ? csr_read_data :
+                           (is_load ? memory_read_data :
+                           (is_jump ? link_value : alu_result));
         register_write_enable = writeback_enable && decoder_valid &&
                                 writes_rd && (rd != 5'd0) && !reset &&
                                 !(is_load && memory_fault);
@@ -93,7 +116,9 @@ module nova_x1_execute (
                          (branch_funct3 == 3'b101 && $signed(register_data_a) >= $signed(register_data_b)) ||
                          (branch_funct3 == 3'b110 && register_data_a < register_data_b) ||
                          (branch_funct3 == 3'b111 && register_data_a >= register_data_b))));
-        if (is_jalr)
+        if (is_mret)
+            branch_offset = mepc_value;
+        else if (is_jalr)
             branch_offset = (register_data_a + immediate) & 64'hffff_ffff_ffff_fffe;
         else
             branch_offset = current_pc + immediate;
