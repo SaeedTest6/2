@@ -3,6 +3,7 @@ module nova_x1_execute (
     input  logic        reset,
     input  logic        writeback_enable,
     input  logic [31:0] instruction,
+    input  logic [63:0] current_pc,
     output logic        instruction_valid,
     output logic        illegal_instruction,
     output logic [63:0] execution_result,
@@ -11,71 +12,58 @@ module nova_x1_execute (
     output logic [63:0] branch_offset
 );
     import nova_pkg::*;
-
-    logic uses_rs1;
-    logic uses_rs2;
-    logic writes_rd;
-    logic uses_immediate;
-    logic is_branch;
-    logic branch_not_equal;
-    logic [4:0] rs1;
-    logic [4:0] rs2;
-    logic [4:0] rd;
+    logic uses_rs1, uses_rs2, writes_rd, uses_immediate;
+    logic is_branch, branch_not_equal, is_jump, is_jalr;
+    logic [4:0] rs1, rs2, rd;
     logic [63:0] immediate;
     nova_alu_op_t alu_op;
-    logic [63:0] operand_a;
-    logic [63:0] operand_b;
-    logic [63:0] register_data_a;
-    logic [63:0] register_data_b;
+    logic [63:0] operand_a, operand_b;
+    logic [63:0] register_data_a, register_data_b;
     logic register_write_enable;
+    logic [63:0] alu_result;
+    logic [63:0] link_value;
 
     nova_x1_decoder decoder (
-        .instruction(instruction),
-        .valid(instruction_valid),
-        .illegal(illegal_instruction),
-        .uses_rs1(uses_rs1),
-        .uses_rs2(uses_rs2),
-        .writes_rd(writes_rd),
-        .uses_immediate(uses_immediate),
-        .is_branch(is_branch),
-        .branch_not_equal(branch_not_equal),
-        .rs1(rs1),
-        .rs2(rs2),
-        .rd(rd),
-        .immediate(immediate),
-        .alu_op(alu_op)
+        .instruction(instruction), .valid(instruction_valid),
+        .illegal(illegal_instruction), .uses_rs1(uses_rs1),
+        .uses_rs2(uses_rs2), .writes_rd(writes_rd),
+        .uses_immediate(uses_immediate), .is_branch(is_branch),
+        .branch_not_equal(branch_not_equal), .is_jump(is_jump),
+        .is_jalr(is_jalr), .rs1(rs1), .rs2(rs2), .rd(rd),
+        .immediate(immediate), .alu_op(alu_op)
     );
 
     nova_x1_regfile registers (
-        .clk(clk),
-        .reset(reset),
-        .write_enable(register_write_enable),
-        .read_addr_a(rs1),
-        .read_addr_b(rs2),
-        .write_addr(rd),
+        .clk(clk), .reset(reset), .write_enable(register_write_enable),
+        .read_addr_a(rs1), .read_addr_b(rs2), .write_addr(rd),
         .write_data(execution_result),
-        .read_data_a(register_data_a),
-        .read_data_b(register_data_b)
+        .read_data_a(register_data_a), .read_data_b(register_data_b)
     );
 
     always_comb begin
         operand_a = uses_rs1 ? register_data_a : 64'b0;
         operand_b = uses_immediate ? immediate :
                     (uses_rs2 ? register_data_b : 64'b0);
+        alu_result = 64'b0;
+        link_value = current_pc + 64'd4;
+        execution_result = is_jump ? link_value : alu_result;
         register_write_enable = writeback_enable && instruction_valid &&
                                 writes_rd && (rd != 5'd0) && !reset;
-        branch_offset = immediate;
-        branch_taken = instruction_valid && is_branch &&
-                       (branch_not_equal ?
-                        (register_data_a != register_data_b) :
-                        (register_data_a == register_data_b));
+
+        branch_taken = instruction_valid &&
+                       (is_jump ||
+                        (is_branch &&
+                         (branch_not_equal ?
+                          (register_data_a != register_data_b) :
+                          (register_data_a == register_data_b))));
+        if (is_jalr)
+            branch_offset = (register_data_a + immediate) & 64'hffff_ffff_ffff_fffe;
+        else
+            branch_offset = current_pc + immediate;
     end
 
     nova_x1_alu alu (
-        .a(operand_a),
-        .b(operand_b),
-        .operation(alu_op),
-        .result(execution_result),
-        .zero(result_zero)
+        .a(operand_a), .b(operand_b), .operation(alu_op),
+        .result(alu_result), .zero(result_zero)
     );
 endmodule
