@@ -29,6 +29,19 @@ Other branch funct3 values are illegal.
 ## J format — JAL
 Opcode `1101111`. imm[20]=[31], imm[10:1]=[30:21], imm[11]=[20], imm[19:12]=[19:12], rd=[11:7]. The signed 21-bit byte offset is added to the current PC. JAL writes PC+4 to rd.
 
+## Machine CSR and trap instructions
+
+The SYSTEM opcode is `1110011`.
+- `CSRRW` / `CSRRWI`: replace the selected CSR with a register value / zero-extended 5-bit immediate.
+- `CSRRS` / `CSRRSI`: set selected CSR bits using a register value / immediate mask.
+- `CSRRC` / `CSRRCI`: clear selected CSR bits using a register value / immediate mask.
+- CSR instructions return the old CSR value in `rd`. CSRRS/CSRRC variants suppress the CSR write when the source mask is zero.
+- Supported machine CSR addresses: `mtvec` = 0x305, `mepc` = 0x341, and `mcause` = 0x342. Access to other CSR addresses is illegal.
+- `mtvec` is initialized from the `TRAP_VECTOR` core parameter and writes clear its bottom two bits.
+- `MRET` is encoded as `0x30200073` and redirects execution to `mepc`.
+
+The current trap model records the faulting instruction address in `mepc` and the cause in `mcause`, then redirects to `mtvec`. It does not yet implement privilege modes, interrupt enable/status state, or nested-trap handling.
+
 ## Control-flow rules
 - Branch and JAL targets are PC-relative byte addresses.
 - JALR target is rs1 plus its signed immediate, with bit zero cleared.
