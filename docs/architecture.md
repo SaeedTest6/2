@@ -1,6 +1,6 @@
 # NOVA X1 — Architecture Notes
 
-**Revision:** 1.0
+**Revision:** 1.1
 
 ## Project direction
 - Project: NOVA
@@ -26,7 +26,7 @@ Trap cause codes currently implemented:
 - 6: store address misaligned
 - 7: store access fault (including out-of-range)
 
-The decoder explicitly rejects reserved branch, JALR, load, and store function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. The data memory reports misaligned and out-of-range accesses; load writeback is suppressed and stores are blocked on memory faults. These cases are covered by self-checking simulation tests. Memory faults now enter the same trap path as illegal instructions. The initial trap model is intentionally small: no privilege modes, nested-trap stack, interrupt handling, or trap-return instruction exists yet. Software must provide a handler at the configured vector; trap state is exposed as core/system outputs for now.
+The decoder explicitly rejects reserved branch, JALR, load, and store function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. The data memory reports misaligned and out-of-range accesses; load writeback is suppressed and stores are blocked on memory faults. These cases are covered by self-checking simulation tests. Memory faults now enter the same trap path as illegal instructions. The initial trap model is intentionally small: Machine CSR access and `MRET` are now implemented for the initial trap model. Supported CSR addresses are `mtvec` (0x305), `mepc` (0x341), and `mcause` (0x342), with CSRRW/CSRRS/CSRRC and their immediate forms. `MRET` redirects PC to `mepc`. Unsupported CSR addresses trap as illegal instructions. Full privilege modes, nested-trap stack, and interrupt handling remain unimplemented. Software must provide a handler at the configured vector; trap state is exposed as core/system outputs for now.
 
 ## Initial conventions
 - Data width: 64 bits
@@ -40,7 +40,7 @@ The decoder explicitly rejects reserved branch, JALR, load, and store function f
 1. Verify the sequential in-order baseline and control flow.
 2. Define and verify a byte-addressable data-memory interface.
 3. Integrate loads/stores and byte/halfword/word/doubleword semantics into the decoder and single-cycle core.
-4. Extend the initial trap-entry mechanism with trap return, privilege state, nested-trap policy, and interrupts.
+4. Extend CSR/trap support with privilege state, nested-trap policy, and interrupts.
 5. Add pipeline stages, hazard detection, and forwarding.
 6. Investigate caches, MMU, vector execution, and performance-per-watt improvements.
 7. Only after a stable baseline, evaluate out-of-order execution and wider issue.
