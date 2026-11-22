@@ -36,9 +36,9 @@ The SYSTEM opcode is `1110011`.
 - `CSRRS` / `CSRRSI`: set selected CSR bits using a register value / immediate mask.
 - `CSRRC` / `CSRRCI`: clear selected CSR bits using a register value / immediate mask.
 - CSR instructions return the old CSR value in `rd`. CSRRS/CSRRC variants suppress the CSR write when the source mask is zero.
-- Supported machine CSR addresses: `mstatus` = 0x300, `mtvec` = 0x305, `mepc` = 0x341, and `mcause` = 0x342. Access to other CSR addresses is illegal.
+- Supported machine CSR addresses: `mstatus` = 0x300, `mie` = 0x304, `mtvec` = 0x305, `mepc` = 0x341, `mcause` = 0x342, and `mip` = 0x344. Access to other CSR addresses is illegal.
 - `mtvec` is initialized from the `TRAP_VECTOR` core parameter and writes clear its bottom two bits.
-- `MRET` is encoded as `0x30200073` and redirects execution to `mepc`. The initial `mstatus` model implements MIE (bit 3) and MPIE (bit 7): trap entry copies MIE to MPIE and clears MIE; MRET restores MIE from MPIE and sets MPIE.
+- `MRET` is encoded as `0x30200073` and redirects execution to `mepc`. The initial `mstatus` model implements MIE (bit 3) and MPIE (bit 7): trap entry copies MIE to MPIE and clears MIE; MRET restores MIE from MPIE and sets MPIE. `mie.MEIE` (bit 11) enables the external machine interrupt; read-only `mip.MEIP` (bit 11) reflects the level-sensitive external interrupt input. When both MEIE and MIE are set, the core takes the interrupt at an instruction boundary, suppresses that instruction's side effects, saves its PC in MEPC, and records `mcause = 0x800000000000000b`. Synchronous exceptions take priority. The handler must clear/deassert the source or disable MEIE before MRET, otherwise the level-triggered interrupt can immediately retrigger.
 
 The current trap model records the faulting instruction address in `mepc` and the cause in `mcause`, then redirects to `mtvec`. It does not yet implement privilege modes, interrupt enable/status state, or nested-trap handling.
 
