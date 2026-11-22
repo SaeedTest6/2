@@ -9,13 +9,14 @@ module nova_x1_system #(
     input  logic        clk,
     input  logic        reset,
     input  logic        run_enable,
+    input  logic        external_interrupt,
     output logic [63:0] pc,
     output logic        instruction_valid,
     output logic        illegal_instruction,
     output logic [63:0] execution_result,
     output logic        trap_taken,
     output logic [63:0] trap_epc,
-    output logic [3:0]  trap_cause
+    output logic [63:0] trap_cause
 );
     logic [31:0] instruction;
 
@@ -36,6 +37,7 @@ module nova_x1_system #(
         .clk(clk),
         .reset(reset),
         .run_enable(run_enable),
+        .external_interrupt(external_interrupt),
         .instruction(instruction),
         .pc(pc),
         .instruction_valid(instruction_valid),
