@@ -71,7 +71,7 @@ module nova_x1_execute (
         else if (memory_fault && is_store)
             exception_cause = memory_misaligned ? 64'd6 : 64'd7;
         else if (is_csr && csr_access_error)
-            exception_cause = 4'd2;
+            exception_cause = 64'd2;
     end
 
     nova_x1_regfile registers (
