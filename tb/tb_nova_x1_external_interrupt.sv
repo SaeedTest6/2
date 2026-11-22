@@ -39,7 +39,7 @@ module tb_nova_x1_external_interrupt;
         #1 reset=0; run_enable=1;
         repeat(7) begin @(posedge clk); #1; end
         if(pc!==64'h01c || dut.mstatus!==64'd8 || dut.mie!==64'd2048)
-            $fatal(1,"Interrupt enable setup failed");
+            $fatal(1,"Interrupt enable setup failed pc=%h mstatus=%h mie=%h x2=%h",pc,dut.mstatus,dut.mie,dut.execute_unit.registers.registers[2]);
 
         @(negedge clk);
         if(!trap_taken) $fatal(1,"Enabled external interrupt was not taken");
