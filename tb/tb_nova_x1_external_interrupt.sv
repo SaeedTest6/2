@@ -50,7 +50,7 @@ module tb_nova_x1_external_interrupt;
 
         repeat(3) begin @(posedge clk); #1; end
         if(pc!==64'h018 || dut.execute_unit.registers.registers[5]!==64'd2048)
-            $fatal(1,"Handler did not observe MIP or return via MRET");
+            $fatal(1,"Handler did not observe MIP or return via MRET pc=%h x5=%h mepc=%h mie=%h mip=%h",pc,dut.execute_unit.registers.registers[5],trap_epc,dut.mie,dut.mip);
         if(dut.mie!==64'd0 || dut.mstatus!==64'h88)
             $fatal(1,"Handler MEIE disable or MRET status restore failed");
 
