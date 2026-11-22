@@ -44,9 +44,14 @@ module nova_x1_core #(
     logic [3:0] irq_inputs;
     logic [3:0] irq_enable;
     logic [3:0] irq_pending;
-    logic [1:0] irq_selected;
+    logic [2:0] irq_selected;
+    logic [2:0] irq_claim;
+    logic [63:0] mtime;
+    logic [63:0] mtimecmp;
+    logic timer_pending;
+    logic timer_irq_enabled;
+    logic external_irq_enabled;
     logic irq_any_enabled;
-    logic [1:0] irq_claim;
     logic mret_taken;
 
     nova_x1_pc program_counter (
@@ -84,16 +89,22 @@ module nova_x1_core #(
         irq_inputs[2] = (interrupt_sources[2] === 1'b1);
         irq_inputs[3] = (interrupt_sources[3] === 1'b1);
         irq_pending = irq_inputs & irq_enable;
-        irq_selected = 2'd0;
-        irq_any_enabled = 1'b0;
-        // Fixed priority: source 0 is highest, source 3 is lowest.
-        if (irq_pending[0]) begin irq_selected=2'd0; irq_any_enabled=1'b1; end
-        else if (irq_pending[1]) begin irq_selected=2'd1; irq_any_enabled=1'b1; end
-        else if (irq_pending[2]) begin irq_selected=2'd2; irq_any_enabled=1'b1; end
-        else if (irq_pending[3]) begin irq_selected=2'd3; irq_any_enabled=1'b1; end
+        irq_selected = 3'd0;
+        irq_any_enabled = |irq_pending;
+        external_irq_enabled = irq_any_enabled && mie[11];
+        timer_pending = (mtime >= mtimecmp);
+        timer_irq_enabled = timer_pending && irq_enable[2] && mie[7];
+        // Priority: external 0, external 1, machine timer (claim 4),
+        // external 2, external 3. Timer has a distinct claim ID.
+        if (irq_pending[0] && mie[11]) irq_selected = 3'd0;
+        else if (irq_pending[1] && mie[11]) irq_selected = 3'd1;
+        else if (timer_irq_enabled) irq_selected = 3'd4;
+        else if (irq_pending[2] && mie[11]) irq_selected = 3'd2;
+        else if (irq_pending[3] && mie[11]) irq_selected = 3'd3;
     end
-    assign mip = {52'b0, irq_any_enabled, 11'b0};
-    assign interrupt_pending = run_enable && !reset && irq_any_enabled && mstatus[3] && mie[11];
+    assign mip = {52'b0, irq_any_enabled, 3'b0, timer_pending, 7'b0};
+    assign interrupt_pending = run_enable && !reset && mstatus[3] &&
+                               (external_irq_enabled || timer_irq_enabled);
     assign trap_taken = run_enable && !reset && (exception_valid || interrupt_pending);
 
     always_comb begin
@@ -102,6 +113,8 @@ module nova_x1_core #(
         case (instruction[31:20])
             12'h300: csr_read_data = mstatus;
             12'h304: csr_read_data = mie;
+            12'h7c3: csr_read_data = mtime;
+            12'h7c4: csr_read_data = mtimecmp;
             12'h305: csr_read_data = mtvec;
             12'h341: csr_read_data = trap_epc;
             12'h342: csr_read_data = trap_cause;
@@ -117,7 +130,7 @@ module nova_x1_core #(
                     csr_access_error = 1'b1;
             end
             12'h7c2: begin
-                csr_read_data = {62'b0, irq_claim};
+                csr_read_data = {61'b0, irq_claim};
                 if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
                     csr_access_error = 1'b1;
             end
@@ -145,7 +158,7 @@ module nova_x1_core #(
             mstatus[7] <= 1'b1;
         end else if (csr_write_enable) begin
             case (csr_address)
-                12'h304: mie <= {52'b0,csr_write_data[11],11'b0};
+                12'h304: mie <= {52'b0, csr_write_data[11], 3'b0, csr_write_data[7], 7'b0};
                 12'h7c0: irq_enable <= csr_write_data[3:0];
                 12'h300: mstatus <= {56'b0,csr_write_data[7],3'b000,csr_write_data[3],3'b000};
                 12'h305: mtvec <= {csr_write_data[63:2],2'b00};
@@ -154,6 +167,19 @@ module nova_x1_core #(
                 default: ;
             endcase
         end
+    end
+
+    // Free-running machine timer. Writes to MTIME take effect at the edge;
+    // otherwise it increments once per clock. MTIMECMP is software-programmable.
+    always_ff @(posedge clk) begin
+        if (reset) mtime <= 64'd0;
+        else if (csr_write_enable && csr_address == 12'h7c3) mtime <= csr_write_data;
+        else mtime <= mtime + 64'd1;
+    end
+
+    always_ff @(posedge clk) begin
+        if (reset) mtimecmp <= 64'hffff_ffff_ffff_ffff;
+        else if (csr_write_enable && csr_address == 12'h7c4) mtimecmp <= csr_write_data;
     end
 
     nova_x1_dmem #(
