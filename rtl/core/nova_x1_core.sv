@@ -82,7 +82,11 @@ module nova_x1_core #(
             12'h305: csr_read_data = mtvec;
             12'h341: csr_read_data = trap_epc;
             12'h342: csr_read_data = trap_cause;
-            12'h344: csr_read_data = mip;
+            12'h344: begin
+                csr_read_data = mip;
+                if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
+                    csr_access_error = 1'b1;
+            end
             default: csr_access_error = 1'b1;
         endcase
     end
@@ -93,7 +97,7 @@ module nova_x1_core #(
             mstatus <= 64'b0;
             mie <= 64'b0;
             trap_epc <= 64'b0;
-            trap_cause <= 4'd0;
+            trap_cause <= 64'd0;
         end else if (trap_taken) begin
             trap_epc <= pc;
             trap_cause <= exception_valid ? exception_cause : 64'h8000_0000_0000_000b;
