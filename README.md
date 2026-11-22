@@ -14,6 +14,7 @@ NOVA is an experimental custom-ISA 64-bit processor RTL project. The current del
 - Initial trap entry: faulting PC/cause capture and configurable trap-vector redirect
 - Machine CSRs (`mstatus`, `mtvec`, `mepc`, `mcause`) with register/immediate read-modify-write operations
 - `MRET` instruction to return to the address saved in `mepc`
+- Maskable level-sensitive external machine interrupt input, with `mie.MEIE`, read-only `mip.MEIP`, and 64-bit interrupt `mcause`
 - Self-checking Icarus Verilog testbenches and GitHub Actions CI
 
 ## Run tests
