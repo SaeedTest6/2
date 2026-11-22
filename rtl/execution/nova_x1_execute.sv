@@ -90,7 +90,7 @@ module nova_x1_execute (
         memory_write_data = register_data_b;
         memory_funct3 = mem_funct3;
         csr_address = instruction[31:20];
-        csr_source = uses_immediate ? immediate : register_data_a;
+        csr_source = csr_funct3[2] ? immediate : register_data_a;
         csr_write_enable = writeback_enable && decoder_valid && is_csr &&
                            !csr_access_error && !reset &&
                            ((csr_funct3[1:0] == 2'b01) || (csr_source != 64'b0));
