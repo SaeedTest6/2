@@ -20,7 +20,7 @@ module nova_x1_imem #(
     always_comb begin
         address_in_range = (address[1:0] == 2'b00) &&
                            (address[63:ADDR_WIDTH+2] == '0) &&
-                           (address[ADDR_WIDTH+1:2] < DEPTH_WORDS);
+                           (int'(address[ADDR_WIDTH+1:2]) < DEPTH_WORDS);
         if (address_in_range)
             instruction = memory[address[ADDR_WIDTH+1:2]];
         else
