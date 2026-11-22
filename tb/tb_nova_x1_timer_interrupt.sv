@@ -14,7 +14,7 @@ module tb_nova_x1_timer_interrupt;
 
     always_comb begin
         case (pc)
-            64'h000: instruction = {12'd11, 5'd0, 3'b000, 5'd7, 7'b0010011}; // x7=0b1011: mask timer source 2
+            64'h000: instruction = {12'd15, 5'd0, 3'b000, 5'd7, 7'b0010011}; // x7=0b1011: mask timer source 2
             64'h004: instruction = {12'd15, 5'd0, 3'b000, 5'd8, 7'b0010011}; // x8=0b1111: re-enable all
             64'h008: instruction = {12'h7c0, 5'd7, 3'b001, 5'd0, 7'b1110011}; // Mask timer source
             64'h00c: instruction = {12'd20, 5'd0, 3'b000, 5'd1, 7'b0010011}; // x1=20
