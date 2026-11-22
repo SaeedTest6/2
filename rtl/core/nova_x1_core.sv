@@ -6,6 +6,7 @@ module nova_x1_core #(
     input  logic        clk,
     input  logic        reset,
     input  logic        run_enable,
+    input  logic        external_interrupt,
     input  logic [31:0] instruction,
     output logic [63:0] pc,
     output logic        instruction_valid,
@@ -13,7 +14,7 @@ module nova_x1_core #(
     output logic [63:0] execution_result,
     output logic        trap_taken,
     output logic [63:0] trap_epc,
-    output logic [3:0]  trap_cause
+    output logic [63:0] trap_cause
 );
     logic result_zero;
     logic branch_taken;
@@ -26,7 +27,7 @@ module nova_x1_core #(
     logic memory_misaligned;
     logic memory_access_error;
     logic exception_valid;
-    logic [3:0] exception_cause;
+    logic [63:0] exception_cause;
     logic [63:0] csr_read_data;
     logic csr_access_error;
     logic csr_write_enable;
@@ -34,6 +35,9 @@ module nova_x1_core #(
     logic [63:0] csr_write_data;
     logic [63:0] mtvec;
     logic [63:0] mstatus;
+    logic [63:0] mie;
+    logic [63:0] mip;
+    logic interrupt_pending;
     logic mret_taken;
 
     nova_x1_pc program_counter (
@@ -44,7 +48,7 @@ module nova_x1_core #(
     );
 
     nova_x1_execute execute_unit (
-        .clk(clk), .reset(reset), .writeback_enable(run_enable),
+        .clk(clk), .reset(reset), .writeback_enable(run_enable && !interrupt_pending),
         .instruction(instruction), .current_pc(pc),
         .memory_read_data(memory_read_data),
         .memory_misaligned(memory_misaligned),
@@ -65,16 +69,20 @@ module nova_x1_core #(
         .branch_taken(branch_taken), .branch_offset(branch_target)
     );
 
-    assign trap_taken = run_enable && exception_valid && !reset;
+    assign mip = {52'b0, (external_interrupt === 1'b1), 11'b0};
+    assign interrupt_pending = run_enable && !reset && (external_interrupt === 1'b1) && mstatus[3] && mie[11];
+    assign trap_taken = run_enable && !reset && (exception_valid || interrupt_pending);
 
     always_comb begin
         csr_access_error = 1'b0;
         csr_read_data = 64'b0;
         case (instruction[31:20])
             12'h300: csr_read_data = mstatus;
+            12'h304: csr_read_data = mie;
             12'h305: csr_read_data = mtvec;
             12'h341: csr_read_data = trap_epc;
-            12'h342: csr_read_data = {60'b0,trap_cause};
+            12'h342: csr_read_data = trap_cause;
+            12'h344: csr_read_data = mip;
             default: csr_access_error = 1'b1;
         endcase
     end
@@ -83,11 +91,12 @@ module nova_x1_core #(
         if (reset) begin
             mtvec <= TRAP_VECTOR;
             mstatus <= 64'b0;
+            mie <= 64'b0;
             trap_epc <= 64'b0;
             trap_cause <= 4'd0;
         end else if (trap_taken) begin
             trap_epc <= pc;
-            trap_cause <= exception_cause;
+            trap_cause <= interrupt_pending ? 64'h8000_0000_0000_000b : exception_cause;
             mstatus[7] <= mstatus[3]; // MPIE <= MIE
             mstatus[3] <= 1'b0;       // Disable global machine interrupts
         end else if (mret_taken) begin
@@ -95,6 +104,7 @@ module nova_x1_core #(
             mstatus[7] <= 1'b1;
         end else if (csr_write_enable) begin
             case (csr_address)
+                12'h304: mie <= {52'b0,csr_write_data[11],11'b0};
                 12'h300: mstatus <= {56'b0,csr_write_data[7],3'b000,csr_write_data[3],3'b000};
                 12'h305: mtvec <= {csr_write_data[63:2],2'b00};
                 12'h341: trap_epc <= csr_write_data;
