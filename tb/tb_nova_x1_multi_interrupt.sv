@@ -50,7 +50,7 @@ module tb_nova_x1_multi_interrupt;
             $fatal(1,"Priority arbitration/claim failed pc=%h epc=%h cause=%h claim=%d",pc,trap_epc,trap_cause,dut.irq_claim);
         repeat(4) begin @(posedge clk); #1; end
         if(pc!==64'h01c || dut.execute_unit.registers.registers[5]!==64'd1 ||
-           dut.irq_enable!==4'b0000)
+           dut.irq_enable!==5'b00000)
             $fatal(1,"Claim CSR, source mask, or MRET failed pc=%h claim=%d enable=%b",pc,dut.execute_unit.registers.registers[5],dut.irq_enable);
         @(posedge clk); #1;
         run_enable=0;
