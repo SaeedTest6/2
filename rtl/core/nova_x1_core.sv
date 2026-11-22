@@ -42,8 +42,8 @@ module nova_x1_core #(
 
     nova_x1_pc program_counter (
         .clk(clk), .reset(reset), .enable(run_enable),
-        .redirect(run_enable && (exception_valid || branch_taken)),
-        .redirect_address(exception_valid ? mtvec : branch_target),
+        .redirect(run_enable && (exception_valid || interrupt_pending || branch_taken)),
+        .redirect_address((exception_valid || interrupt_pending) ? mtvec : branch_target),
         .next_address(pc + 64'd4), .pc(pc)
     );
 
@@ -96,7 +96,7 @@ module nova_x1_core #(
             trap_cause <= 4'd0;
         end else if (trap_taken) begin
             trap_epc <= pc;
-            trap_cause <= interrupt_pending ? 64'h8000_0000_0000_000b : exception_cause;
+            trap_cause <= exception_valid ? exception_cause : 64'h8000_0000_0000_000b;
             mstatus[7] <= mstatus[3]; // MPIE <= MIE
             mstatus[3] <= 1'b0;       // Disable global machine interrupts
         end else if (mret_taken) begin
