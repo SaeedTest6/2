@@ -148,7 +148,7 @@ module nova_x1_core #(
                 12'h300: mstatus <= {56'b0,csr_write_data[7],3'b000,csr_write_data[3],3'b000};
                 12'h305: mtvec <= {csr_write_data[63:2],2'b00};
                 12'h341: trap_epc <= csr_write_data;
-                12'h342: trap_cause <= csr_write_data[3:0];
+                12'h342: trap_cause <= {60'b0, csr_write_data[3:0]};
                 default: ;
             endcase
         end
