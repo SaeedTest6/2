@@ -146,7 +146,7 @@ module nova_x1_core #(
             trap_epc <= 64'b0;
             trap_cause <= 64'd0;
             irq_enable <= 4'b1111;
-            irq_claim <= 2'd0;
+            irq_claim <= 3'd0;
         end else if (trap_taken) begin
             trap_epc <= pc;
             trap_cause <= exception_valid ? exception_cause : 64'h8000_0000_0000_000b;
