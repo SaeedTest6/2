@@ -60,7 +60,7 @@ module tb_nova_x1_timer_interrupt;
                    pc, trap_cause, dut.irq_claim, dut.mip);
 
         cycles = 0;
-        while (pc !== 64'h110 && cycles < 10) begin
+        while (pc !== trap_epc && cycles < 10) begin
             @(posedge clk);
             #1;
             cycles = cycles + 1;
