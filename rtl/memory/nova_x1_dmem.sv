@@ -50,6 +50,7 @@ module nova_x1_dmem #(
     output logic        misaligned,
     output logic        access_error
 );
+    localparam integer INDEX_WIDTH = (DEPTH_BYTES <= 1) ? 1 : $clog2(DEPTH_BYTES);
     logic [7:0] memory [0:DEPTH_BYTES-1];
     integer i;
 
@@ -93,9 +94,9 @@ module nova_x1_dmem #(
     // The whole access must fit: the start address and the last byte
     // accessed must both be inside the memory. The start check also
     // guards the 64-bit addition against wrapping for huge addresses.
-    assign address_in_range = (address < DEPTH_BYTES);
+    assign address_in_range = (address < 64'(DEPTH_BYTES));
     assign access_in_range  = address_in_range &&
-        ((address + {60'b0, size_bytes}) <= DEPTH_BYTES);
+        ((address + {60'b0, size_bytes}) <= 64'(DEPTH_BYTES));
 
     assign access_error = reserved_funct3 || !access_in_range;
     assign access_ok    = !misaligned && !access_error;
@@ -117,33 +118,33 @@ module nova_x1_dmem #(
             case (size_sel)
                 2'b00: begin // LB / LBU
                     if (sign_extend)
-                        read_data = {{56{memory[address][7]}}, memory[address]};
+                        read_data = {{56{memory[INDEX_WIDTH'(address + 64'd0)][7]}}, memory[INDEX_WIDTH'(address + 64'd0)]};
                     else
-                        read_data = {56'b0, memory[address]};
+                        read_data = {56'b0, memory[INDEX_WIDTH'(address + 64'd0)]};
                 end
                 2'b01: begin // LH / LHU
                     if (sign_extend)
-                        read_data = {{48{memory[address+1][7]}},
-                                     memory[address+1], memory[address]};
+                        read_data = {{48{memory[INDEX_WIDTH'(address + 64'd1)][7]}},
+                                     memory[INDEX_WIDTH'(address + 64'd1)], memory[INDEX_WIDTH'(address + 64'd0)]};
                     else
                         read_data = {48'b0,
-                                     memory[address+1], memory[address]};
+                                     memory[INDEX_WIDTH'(address + 64'd1)], memory[INDEX_WIDTH'(address + 64'd0)]};
                 end
                 2'b10: begin // LW / LWU
                     if (sign_extend)
-                        read_data = {{32{memory[address+3][7]}},
-                                     memory[address+3], memory[address+2],
-                                     memory[address+1], memory[address]};
+                        read_data = {{32{memory[INDEX_WIDTH'(address + 64'd3)][7]}},
+                                     memory[INDEX_WIDTH'(address + 64'd3)], memory[INDEX_WIDTH'(address + 64'd2)],
+                                     memory[INDEX_WIDTH'(address + 64'd1)], memory[INDEX_WIDTH'(address + 64'd0)]};
                     else
                         read_data = {32'b0,
-                                     memory[address+3], memory[address+2],
-                                     memory[address+1], memory[address]};
+                                     memory[INDEX_WIDTH'(address + 64'd3)], memory[INDEX_WIDTH'(address + 64'd2)],
+                                     memory[INDEX_WIDTH'(address + 64'd1)], memory[INDEX_WIDTH'(address + 64'd0)]};
                 end
                 default: begin // LD
-                    read_data = {memory[address+7], memory[address+6],
-                                 memory[address+5], memory[address+4],
-                                 memory[address+3], memory[address+2],
-                                 memory[address+1], memory[address]};
+                    read_data = {memory[INDEX_WIDTH'(address + 64'd7)], memory[INDEX_WIDTH'(address + 64'd6)],
+                                 memory[INDEX_WIDTH'(address + 64'd5)], memory[INDEX_WIDTH'(address + 64'd4)],
+                                 memory[INDEX_WIDTH'(address + 64'd3)], memory[INDEX_WIDTH'(address + 64'd2)],
+                                 memory[INDEX_WIDTH'(address + 64'd1)], memory[INDEX_WIDTH'(address + 64'd0)]};
                 end
             endcase
         end
@@ -155,27 +156,27 @@ module nova_x1_dmem #(
         if (write_enable && access_ok) begin
             case (size_sel)
                 2'b00: begin // SB
-                    memory[address] <= write_data[7:0];
+                    memory[INDEX_WIDTH'(address + 64'd0)] <= write_data[7:0];
                 end
                 2'b01: begin // SH
-                    memory[address]   <= write_data[7:0];
-                    memory[address+1] <= write_data[15:8];
+                    memory[INDEX_WIDTH'(address + 64'd0)]   <= write_data[7:0];
+                    memory[INDEX_WIDTH'(address + 64'd1)] <= write_data[15:8];
                 end
                 2'b10: begin // SW
-                    memory[address]   <= write_data[7:0];
-                    memory[address+1] <= write_data[15:8];
-                    memory[address+2] <= write_data[23:16];
-                    memory[address+3] <= write_data[31:24];
+                    memory[INDEX_WIDTH'(address + 64'd0)]   <= write_data[7:0];
+                    memory[INDEX_WIDTH'(address + 64'd1)] <= write_data[15:8];
+                    memory[INDEX_WIDTH'(address + 64'd2)] <= write_data[23:16];
+                    memory[INDEX_WIDTH'(address + 64'd3)] <= write_data[31:24];
                 end
                 default: begin // SD
-                    memory[address]   <= write_data[7:0];
-                    memory[address+1] <= write_data[15:8];
-                    memory[address+2] <= write_data[23:16];
-                    memory[address+3] <= write_data[31:24];
-                    memory[address+4] <= write_data[39:32];
-                    memory[address+5] <= write_data[47:40];
-                    memory[address+6] <= write_data[55:48];
-                    memory[address+7] <= write_data[63:56];
+                    memory[INDEX_WIDTH'(address + 64'd0)]   <= write_data[7:0];
+                    memory[INDEX_WIDTH'(address + 64'd1)] <= write_data[15:8];
+                    memory[INDEX_WIDTH'(address + 64'd2)] <= write_data[23:16];
+                    memory[INDEX_WIDTH'(address + 64'd3)] <= write_data[31:24];
+                    memory[INDEX_WIDTH'(address + 64'd4)] <= write_data[39:32];
+                    memory[INDEX_WIDTH'(address + 64'd5)] <= write_data[47:40];
+                    memory[INDEX_WIDTH'(address + 64'd6)] <= write_data[55:48];
+                    memory[INDEX_WIDTH'(address + 64'd7)] <= write_data[63:56];
                 end
             endcase
         end
