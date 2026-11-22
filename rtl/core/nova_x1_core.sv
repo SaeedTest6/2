@@ -42,7 +42,7 @@ module nova_x1_core #(
     logic [63:0] mip;
     logic interrupt_pending;
     logic [3:0] irq_inputs;
-    logic [3:0] irq_enable;
+    logic [4:0] irq_enable;
     logic [3:0] irq_pending;
     logic [2:0] irq_selected;
     logic [2:0] irq_claim;
@@ -88,12 +88,12 @@ module nova_x1_core #(
         irq_inputs[1] = (interrupt_sources[1] === 1'b1);
         irq_inputs[2] = (interrupt_sources[2] === 1'b1);
         irq_inputs[3] = (interrupt_sources[3] === 1'b1);
-        irq_pending = irq_inputs & irq_enable;
+        irq_pending = irq_inputs & irq_enable[3:0];
         irq_selected = 3'd0;
         irq_any_enabled = |irq_pending;
         external_irq_enabled = irq_any_enabled && mie[11];
         timer_pending = (mtime >= mtimecmp);
-        timer_irq_enabled = timer_pending && irq_enable[2] && mie[7];
+        timer_irq_enabled = timer_pending && irq_enable[4] && mie[7];
         // Priority: external 0, external 1, machine timer (claim 4),
         // external 2, external 3. Timer has a distinct claim ID.
         if (irq_pending[0] && mie[11]) irq_selected = 3'd0;
@@ -123,7 +123,7 @@ module nova_x1_core #(
                 if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
                     csr_access_error = 1'b1;
             end
-            12'h7c0: csr_read_data = {60'b0, irq_enable};
+            12'h7c0: csr_read_data = {59'b0, irq_enable};
             12'h7c1: begin
                 csr_read_data = {60'b0, irq_pending};
                 if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
@@ -145,7 +145,7 @@ module nova_x1_core #(
             mie <= 64'b0;
             trap_epc <= 64'b0;
             trap_cause <= 64'd0;
-            irq_enable <= 4'b1111;
+            irq_enable <= 5'b11111;
             irq_claim <= 3'd0;
         end else if (trap_taken) begin
             trap_epc <= pc;
@@ -159,7 +159,7 @@ module nova_x1_core #(
         end else if (csr_write_enable) begin
             case (csr_address)
                 12'h304: mie <= {52'b0, csr_write_data[11], 3'b0, csr_write_data[7], 7'b0};
-                12'h7c0: irq_enable <= csr_write_data[3:0];
+                12'h7c0: irq_enable <= csr_write_data[4:0];
                 12'h300: mstatus <= {56'b0,csr_write_data[7],3'b000,csr_write_data[3],3'b000};
                 12'h305: mtvec <= {csr_write_data[63:2],2'b00};
                 12'h341: trap_epc <= csr_write_data;
