@@ -39,7 +39,7 @@ module tb_nova_x1_software_interrupt;
     initial begin
         repeat(2) @(posedge clk);
         #1 reset=0; run_enable=1;
-        repeat(9) begin @(posedge clk); #1; end
+        repeat(8) begin @(posedge clk); #1; end
         if(pc!==64'h020 || !dut.msip || !dut.interrupt_pending)
             $fatal(1,"Software interrupt setup failed pc=%h msip=%b mie=%h",pc,dut.msip,dut.mie);
         @(posedge clk); #1;
