@@ -109,8 +109,16 @@ module nova_x1_core #(
                     csr_access_error = 1'b1;
             end
             12'h7c0: csr_read_data = {60'b0, irq_enable};
-            12'h7c1: csr_read_data = {60'b0, irq_pending};
-            12'h7c2: csr_read_data = {62'b0, irq_claim};
+            12'h7c1: begin
+                csr_read_data = {60'b0, irq_pending};
+                if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
+                    csr_access_error = 1'b1;
+            end
+            12'h7c2: begin
+                csr_read_data = {62'b0, irq_claim};
+                if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
+                    csr_access_error = 1'b1;
+            end
             default: csr_access_error = 1'b1;
         endcase
     end
