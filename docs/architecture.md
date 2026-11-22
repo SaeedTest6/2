@@ -1,6 +1,6 @@
 # NOVA X1 — Architecture Notes
 
-**Revision:** 1.1
+**Revision:** 1.2
 
 ## Project direction
 - Project: NOVA
@@ -26,7 +26,7 @@ Trap cause codes currently implemented:
 - 6: store address misaligned
 - 7: store access fault (including out-of-range)
 
-The decoder explicitly rejects reserved branch, JALR, load, and store function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. The data memory reports misaligned and out-of-range accesses; load writeback is suppressed and stores are blocked on memory faults. These cases are covered by self-checking simulation tests. Memory faults now enter the same trap path as illegal instructions. The initial trap model is intentionally small: Machine CSR access and `MRET` are now implemented for the initial trap model. Supported CSR addresses are `mstatus` (0x300), `mtvec` (0x305), `mepc` (0x341), and `mcause` (0x342), with CSRRW/CSRRS/CSRRC and their immediate forms. The initial `mstatus` model implements only MIE (bit 3) and MPIE (bit 7): trap entry saves MIE into MPIE and clears MIE; MRET restores MIE from MPIE and sets MPIE. `MRET` redirects PC to `mepc`. Unsupported CSR addresses trap as illegal instructions. Full privilege modes, nested-trap stack, and interrupt handling remain unimplemented. Software must provide a handler at the configured vector; trap state is exposed as core/system outputs for now.
+The decoder explicitly rejects reserved branch, JALR, load, and store function fields, unsupported R-type function encodings, and reserved upper bits in shift-immediate instructions. The data memory reports misaligned and out-of-range accesses; load writeback is suppressed and stores are blocked on memory faults. These cases are covered by self-checking simulation tests. Memory faults now enter the same trap path as illegal instructions. The initial trap model is intentionally small: Machine CSR access and `MRET` are now implemented for the initial trap model. Supported CSR addresses are `mstatus` (0x300), `mie` (0x304), `mtvec` (0x305), `mepc` (0x341), `mcause` (0x342), and `mip` (0x344), with CSRRW/CSRRS/CSRRC and their immediate forms. `mie.MEIE` (bit 11) masks the external interrupt input, and `mip.MEIP` (bit 11) reflects its asserted level; MIP is read-only. The core accepts a level-sensitive `external_interrupt` input and takes the machine-external interrupt when MEIE and global MIE are both set. Interrupts use the 64-bit `mcause` value `0x800000000000000b`; synchronous exceptions have priority. Interrupt entry suppresses the current instruction's side effects and saves its PC in MEPC, so MRET retries that instruction. The handler must clear/deassert the interrupt source or disable MEIE before returning. The initial `mstatus` model implements only MIE (bit 3) and MPIE (bit 7): trap entry saves MIE into MPIE and clears MIE; MRET restores MIE from MPIE and sets MPIE. `MRET` redirects PC to `mepc`. Unsupported CSR addresses trap as illegal instructions. Full privilege modes, nested-trap stack, interrupt prioritization beyond one external source, and timer/software interrupts remain unimplemented. Software must provide a handler at the configured vector; trap state is exposed as core/system outputs for now.
 
 ## Initial conventions
 - Data width: 64 bits
@@ -40,7 +40,7 @@ The decoder explicitly rejects reserved branch, JALR, load, and store function f
 1. Verify the sequential in-order baseline and control flow.
 2. Define and verify a byte-addressable data-memory interface.
 3. Integrate loads/stores and byte/halfword/word/doubleword semantics into the decoder and single-cycle core.
-4. Extend CSR/trap support with privilege state, nested-trap policy, and interrupts.
+4. Extend CSR/trap support with privilege state, nested-trap policy, and timer/software interrupt sources.
 5. Add pipeline stages, hazard detection, and forwarding.
 6. Investigate caches, MMU, vector execution, and performance-per-watt improvements.
 7. Only after a stable baseline, evaluate out-of-order execution and wider issue.
