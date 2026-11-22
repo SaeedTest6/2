@@ -49,6 +49,9 @@ module nova_x1_core #(
     logic [63:0] mtime;
     logic [63:0] mtimecmp;
     logic timer_pending;
+    logic software_pending;
+    logic software_irq_enabled;
+    logic msip;
     logic timer_irq_enabled;
     logic external_irq_enabled;
     logic irq_any_enabled;
@@ -94,17 +97,20 @@ module nova_x1_core #(
         external_irq_enabled = irq_any_enabled && mie[11];
         timer_pending = (mtime >= mtimecmp);
         timer_irq_enabled = timer_pending && irq_enable[4] && mie[7];
-        // Priority: external 0, external 1, machine timer (claim 4),
-        // external 2, external 3. Timer has a distinct claim ID.
+        software_pending = msip;
+        software_irq_enabled = software_pending && mie[3];
+        // Priority: external 0, external 1, software (claim 5), machine timer (claim 4),
+        // external 2, external 3. Software and timer have distinct claim IDs.
         if (irq_pending[0] && mie[11]) irq_selected = 3'd0;
         else if (irq_pending[1] && mie[11]) irq_selected = 3'd1;
+        else if (software_irq_enabled) irq_selected = 3'd5;
         else if (timer_irq_enabled) irq_selected = 3'd4;
         else if (irq_pending[2] && mie[11]) irq_selected = 3'd2;
         else if (irq_pending[3] && mie[11]) irq_selected = 3'd3;
     end
-    assign mip = {52'b0, irq_any_enabled, 3'b0, timer_pending, 7'b0};
+    assign mip = {52'b0, irq_any_enabled, 3'b0, timer_pending, 3'b0, msip, 3'b0};
     assign interrupt_pending = run_enable && !reset && mstatus[3] &&
-                               (external_irq_enabled || timer_irq_enabled);
+                               (external_irq_enabled || timer_irq_enabled || software_irq_enabled);
     assign trap_taken = run_enable && !reset && (exception_valid || interrupt_pending);
 
     always_comb begin
@@ -118,11 +124,7 @@ module nova_x1_core #(
             12'h305: csr_read_data = mtvec;
             12'h341: csr_read_data = trap_epc;
             12'h342: csr_read_data = trap_cause;
-            12'h344: begin
-                csr_read_data = mip;
-                if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
-                    csr_access_error = 1'b1;
-            end
+            12'h344: csr_read_data = mip;
             12'h7c0: csr_read_data = {59'b0, irq_enable};
             12'h7c1: begin
                 csr_read_data = {60'b0, irq_pending};
@@ -147,9 +149,13 @@ module nova_x1_core #(
             trap_cause <= 64'd0;
             irq_enable <= 5'b11111;
             irq_claim <= 3'd0;
+            msip <= 1'b0;
         end else if (trap_taken) begin
             trap_epc <= pc;
-            trap_cause <= exception_valid ? exception_cause : 64'h8000_0000_0000_000b;
+            trap_cause <= exception_valid ? exception_cause :
+                          (irq_selected == 3'd5 ? 64'h8000_0000_0000_0003 :
+                           irq_selected == 3'd4 ? 64'h8000_0000_0000_0007 :
+                                                  64'h8000_0000_0000_000b);
             if (!exception_valid) irq_claim <= irq_selected;
             mstatus[7] <= mstatus[3]; // MPIE <= MIE
             mstatus[3] <= 1'b0;       // Disable global machine interrupts
@@ -158,7 +164,8 @@ module nova_x1_core #(
             mstatus[7] <= 1'b1;
         end else if (csr_write_enable) begin
             case (csr_address)
-                12'h304: mie <= {52'b0, csr_write_data[11], 3'b0, csr_write_data[7], 7'b0};
+                12'h304: mie <= {52'b0, csr_write_data[11], 3'b0, csr_write_data[7], 3'b0, csr_write_data[3], 3'b0};
+                12'h344: msip <= csr_write_data[3];
                 12'h7c0: irq_enable <= csr_write_data[4:0];
                 12'h300: mstatus <= {56'b0,csr_write_data[7],3'b000,csr_write_data[3],3'b000};
                 12'h305: mtvec <= {csr_write_data[63:2],2'b00};
