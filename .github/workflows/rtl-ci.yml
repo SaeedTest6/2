@@ -18,3 +18,15 @@ jobs:
           sudo apt-get install -y iverilog
       - name: Run self-checking RTL tests
         run: make test
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator
+      - name: Run RTL lint
+        run: make lint
