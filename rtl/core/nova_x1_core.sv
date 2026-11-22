@@ -17,6 +17,9 @@ module nova_x1_core #(
     output logic [63:0] trap_epc,
     output logic [63:0] trap_cause
 );
+    /* verilator lint_off UNUSEDSIGNAL */
+    logic result_zero;
+    /* verilator lint_on UNUSEDSIGNAL */
     logic branch_taken;
     logic [63:0] branch_target;
     logic memory_write_enable;
@@ -71,7 +74,7 @@ module nova_x1_core #(
         .csr_write_data(csr_write_data), .mret_taken(mret_taken),
         .instruction_valid(instruction_valid),
         .illegal_instruction(illegal_instruction),
-        .execution_result(execution_result), .result_zero(),
+        .execution_result(execution_result), .result_zero(result_zero),
         .branch_taken(branch_taken), .branch_offset(branch_target)
     );
 
