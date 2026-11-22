@@ -15,6 +15,7 @@ NOVA is an experimental custom-ISA 64-bit processor RTL project. The current del
 - Machine CSRs (`mstatus`, `mtvec`, `mepc`, `mcause`) with register/immediate read-modify-write operations
 - `MRET` instruction to return to the address saved in `mepc`
 - Four-source level-sensitive machine interrupt controller with fixed priority, per-source enable mask, read-only pending/claim CSRs, `mie.MEIE`, `mip.MEIP`, and 64-bit interrupt `mcause`
+- Machine timer: 64-bit `mtime` (one count per enabled cycle, read via the read-only `time` CSR), `mtimecmp` CSR, `mie.MTIE`/`mip.MTIP`, and a timer interrupt that ranks below the external interrupts
 - Self-checking Icarus Verilog testbenches and GitHub Actions CI
 
 ## Run tests
@@ -28,6 +29,6 @@ make lint
 ```
 
 ## Scope and limitations
-This is not a production CPU or validated silicon design. It is a growing RTL prototype that executes one instruction per enabled cycle. Data memory and load/store are integrated in the core and system wrapper. Illegal encodings and memory faults suppress affected side effects and enter the initial trap path. The core records `trap_epc`/`trap_cause` and redirects to `TRAP_VECTOR` (default `0x100`); full privilege modes, timer/software interrupts, caches, MMU, pipeline, forwarding, hazard handling, and a software toolchain are not implemented yet. The four-source interrupt controller is an initial custom mechanism, not a complete standardized interrupt subsystem. ROM initialization and synthesis inference require validation in a selected FPGA/ASIC flow. No clock, area, power, or performance claims are made.
+This is not a production CPU or validated silicon design. It is a growing RTL prototype that executes one instruction per enabled cycle. Data memory and load/store are integrated in the core and system wrapper. Illegal encodings and memory faults suppress affected side effects and enter the initial trap path. The core records `trap_epc`/`trap_cause` and redirects to `TRAP_VECTOR` (default `0x100`); full privilege modes, software interrupts, caches, MMU, pipeline, forwarding, hazard handling, and a software toolchain are not implemented yet. The four-source interrupt controller is an initial custom mechanism, not a complete standardized interrupt subsystem. ROM initialization and synthesis inference require validation in a selected FPGA/ASIC flow. No clock, area, power, or performance claims are made.
 
 See [docs/architecture.md](docs/architecture.md) and [docs/isa_v0.1.md](docs/isa_v0.1.md) for design notes.

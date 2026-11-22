@@ -45,6 +45,14 @@ module nova_x1_core #(
     logic irq_any_enabled;
     logic [1:0] irq_claim;
     logic mret_taken;
+    // Machine timer: mtime advances once per enabled cycle; the timer
+    // interrupt level is mtime >= mtimecmp (unsigned).
+    logic [63:0] mtime;
+    logic [63:0] mtimecmp;
+    logic timer_pending;
+    logic external_irq;
+    logic timer_irq;
+    logic csr_ro_write_attempt;
 
     nova_x1_pc program_counter (
         .clk(clk), .reset(reset), .enable(run_enable),
@@ -89,8 +97,15 @@ module nova_x1_core #(
         else if (irq_pending[2]) begin irq_selected=2'd2; irq_any_enabled=1'b1; end
         else if (irq_pending[3]) begin irq_selected=2'd3; irq_any_enabled=1'b1; end
     end
-    assign mip = {52'b0, irq_any_enabled, 11'b0};
-    assign interrupt_pending = run_enable && !reset && irq_any_enabled && mstatus[3] && mie[11];
+    assign timer_pending = (mtime >= mtimecmp);
+    assign mip = {52'b0, irq_any_enabled, 3'b0, timer_pending, 7'b0};
+    // External (MEI) has priority over timer (MTI); both are gated by MIE.
+    assign external_irq = irq_any_enabled && mie[11];
+    assign timer_irq = timer_pending && mie[7];
+    assign interrupt_pending = run_enable && !reset && mstatus[3] &&
+                               (external_irq || timer_irq);
+    assign csr_ro_write_attempt = (instruction[13:12] == 2'b01) ||
+                                  (instruction[19:15] != 5'd0);
     assign trap_taken = run_enable && !reset && (exception_valid || interrupt_pending);
 
     always_comb begin
@@ -118,8 +133,18 @@ module nova_x1_core #(
                 if ((instruction[13:12] == 2'b01) || (instruction[19:15] != 5'd0))
                     csr_access_error = 1'b1;
             end
+            12'h7c3: csr_read_data = mtimecmp;
+            12'hc01: begin // time: read-only view of mtime
+                csr_read_data = mtime;
+                if (csr_ro_write_attempt) csr_access_error = 1'b1;
+            end
             default: csr_access_error = 1'b1;
         endcase
+    end
+
+    always_ff @(posedge clk) begin
+        if (reset) mtime <= 64'd0;
+        else if (run_enable) mtime <= mtime + 64'd1;
     end
 
     always_ff @(posedge clk) begin
@@ -131,10 +156,14 @@ module nova_x1_core #(
             trap_cause <= 64'd0;
             irq_enable <= 4'b1111;
             irq_claim <= 2'd0;
+            mtimecmp <= {64{1'b1}};
         end else if (trap_taken) begin
             trap_epc <= pc;
-            trap_cause <= exception_valid ? exception_cause : 64'h8000_0000_0000_000b;
-            if (!exception_valid) irq_claim <= irq_selected;
+            trap_cause <= exception_valid ? exception_cause :
+                          (external_irq ? 64'h8000_0000_0000_000b
+                                        : 64'h8000_0000_0000_0007);
+            // irq_claim identifies external sources only; timer entry keeps it.
+            if (!exception_valid && external_irq) irq_claim <= irq_selected;
             mstatus[7] <= mstatus[3]; // MPIE <= MIE
             mstatus[3] <= 1'b0;       // Disable global machine interrupts
         end else if (mret_taken) begin
@@ -142,8 +171,9 @@ module nova_x1_core #(
             mstatus[7] <= 1'b1;
         end else if (csr_write_enable) begin
             case (csr_address)
-                12'h304: mie <= {52'b0,csr_write_data[11],11'b0};
+                12'h304: mie <= {52'b0,csr_write_data[11],3'b000,csr_write_data[7],7'b0};
                 12'h7c0: irq_enable <= csr_write_data[3:0];
+                12'h7c3: mtimecmp <= csr_write_data;
                 12'h300: mstatus <= {56'b0,csr_write_data[7],3'b000,csr_write_data[3],3'b000};
                 12'h305: mtvec <= {csr_write_data[63:2],2'b00};
                 12'h341: trap_epc <= csr_write_data;

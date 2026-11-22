@@ -88,6 +88,24 @@ run_test tb_nova_x1_multi_interrupt \
     rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
     rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_multi_interrupt.sv
 
+run_test tb_nova_x1_timer_interrupt \
+    rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
+    rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
+    rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_timer_interrupt.sv
+
+run_test tb_nova_x1_timer_priority \
+    rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
+    rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
+    rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_timer_priority.sv
+
+run_test tb_nova_x1_timer_csr \
+    rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
+    rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
+    rtl/execution/nova_x1_alu.sv rtl/execution/nova_x1_execute.sv \
+    rtl/memory/nova_x1_dmem.sv rtl/core/nova_x1_core.sv tb/tb_nova_x1_timer_csr.sv
+
 run_test tb_nova_x1_mstatus \
     rtl/common/nova_pkg.sv rtl/fetch/nova_x1_pc.sv \
     rtl/decode/nova_x1_decoder.sv rtl/registers/nova_x1_regfile.sv \
