@@ -57,7 +57,7 @@ module tb_nova_x1_timer_interrupt;
 
         @(posedge clk);
         #1;
-        if (pc !== 64'h100 || trap_cause !== 64'h8000_0000_0000_000b ||
+        if (pc !== 64'h100 || trap_cause !== 64'h8000_0000_0000_0007 ||
             dut.irq_claim !== 3'd4 || !dut.mip[7] || trap_epc !== 64'h50)
             $fatal(1, "Timer interrupt entry/mask release failed pc=%h epc=%h cause=%h claim=%d mip=%h",
                    pc, trap_epc, trap_cause, dut.irq_claim, dut.mip);
